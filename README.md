@@ -64,7 +64,7 @@ State 为只读对象, 创建 State 只能由 `_create` 构造函数与`_copy`�
 
 所有的 State 必须继承 `SimpleState`
 
-P.S. 可以使用`VS Code` 的 [Snippet]() 快速创建 State
+P.S. 可以使用`VS Code` 的 [Snippet](snippet) 快速创建 State
 
 ```dart
 // 定义 TodoState
@@ -115,7 +115,7 @@ final newState = state._copy(filter: FilterType.Active);
 
 所有的 Action 必须继承 `SimpleAction`
 
-P.S. 可以使用`VS Code` 的 [Snippet]() 快速创建 Action
+P.S. 可以使用`VS Code` 的 [Snippet](snippet) 快速创建 Action
 
 ```dart
 // 定义 TodoAction
@@ -245,7 +245,7 @@ class TodoStore extends Store<TodoAction> {
 
 value 用于定义只读实体类.
 
-P.S. 可以使用`VS Code` 的 [Snippet]() 快速创建 Action
+P.S. 可以使用`VS Code` 的 [Snippet](snippet) 快速创建 Action
 
 ```dart
 // Value 的定义与 State 基本一样
@@ -305,7 +305,7 @@ StoreSetter 用于修改 Store 状态并收集变更信息, 在 dispatch 完成�
        });
      }
    }
-```
+   ```
    
    
 
@@ -332,6 +332,8 @@ void main() {
 ### Page
 
 用于定义一个 Module 中的页面, 使用方法跟 Action 一样
+
+P.S. 可以使用`VS Code` 的 [Snippet](snippet) 快速创建 Page
 
 ```dart
 @page
@@ -389,4 +391,4 @@ class TodoModule extends Module<TodoPages> {
 ```
 
 
-
+[snippet]: https://github.com/jacokoo/simple-store/blob/master/snippets.json
