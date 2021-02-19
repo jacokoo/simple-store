@@ -13,11 +13,11 @@
 ```yaml
 # pubspec.yaml
 dependencies:
-	simple_store:
+  simple_store:
 	
 dev_dependencies:
-	build_runner:
-	simple_store_gen:
+  build_runner:
+  simple_store_gen:
 ```
 
 
