@@ -1,0 +1,56 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'home.dart';
+
+// **************************************************************************
+// PageGenerator
+// **************************************************************************
+
+mixin _$HomePages {
+  Widget _when(
+      {@required Widget Function(_Home) home,
+      @required Widget Function(_Todo) todo,
+      @required Widget Function(_Inside) inside}) {
+    if (this is _Home) return home(this);
+    if (this is _Todo) return todo(this);
+    if (this is _Inside) return inside(this);
+    return null;
+  }
+}
+
+class _Home extends HomePages {
+  const _Home() : super._();
+
+  @override
+  String get name => 'home';
+
+  @override
+  String toString() {
+    return 'HomePages.home()';
+  }
+}
+
+class _Todo extends HomePages {
+  final BuiltList<Todo> todos;
+  const _Todo(this.todos) : super._();
+
+  @override
+  String get name => 'todo';
+
+  @override
+  String toString() {
+    return 'HomePages.todo(todos: $todos)';
+  }
+}
+
+class _Inside extends HomePages {
+  const _Inside() : super._();
+
+  @override
+  String get name => 'inside';
+
+  @override
+  String toString() {
+    return 'HomePages.inside()';
+  }
+}

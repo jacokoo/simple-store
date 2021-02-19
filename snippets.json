@@ -1,0 +1,50 @@
+{
+	"Simple Store state": {
+		"prefix": "state",
+		"body": [
+			"@state",
+			"abstract class ${1:Some}State extends SimpleState with _$$1State {",
+			"    $1State._();",
+			"",
+			"    factory $1State._create($0) = _$1State;",
+			"}"
+		],
+		"description": "Simple Store state"
+	},
+	"Simple Store action": {
+		"prefix": "action",
+		"body": [
+			"@action",
+			"abstract class ${1:Some}Action extends SimpleAction with _$$1Action {",
+			"    const $1Action._();",
+			"",
+			"    const factory $1Action.${2:actionName}() = _${2/^(\\w)/${1:/upcase}/};",
+			"}"
+		],
+		"description": "Simple Store action"
+	},
+	"Simple Store value": {
+		"prefix": "value",
+		"body": [
+			"@value",
+			"abstract class ${1:ValueClassName} with _$$1 {",
+			"    $1._();",
+			"",
+			"    factory $1($0) = _$1;",
+			"}"
+		],
+		"description": "Simple Store value"
+	},
+	"Simple Store pages": {
+		"prefix": "pages",
+		"body": [
+			"@page",
+			"abstract class ${1:Some}Pages extends SimplePage with _$$1Pages {",
+			"    const $1Pages._();",
+			"",
+			"    const factory $1Pages.${2:actionName}() = _${2/^(\\w)/${1:/upcase}/};",
+			"}"
+		],
+		"description": "Simple Store pages"
+	}
+}

@@ -1,0 +1,32 @@
+builders:
+    action:
+        import: "package:simple_store_gen/simple_store_gen.dart"
+        builder_factories: ["actionBuilder"]
+        build_extensions: {".dart": ["action.g.part"]}
+        auto_apply: dependents
+        build_to: cache
+        applies_builders: ["source_gen|combining_builder"]
+
+    state:
+        import: "package:simple_store_gen/simple_store_gen.dart"
+        builder_factories: ["stateBuilder"]
+        build_extensions: {".dart": ["state.g.part"]}
+        auto_apply: dependents
+        build_to: cache
+        applies_builders: ["source_gen|combining_builder"]
+
+    value:
+        import: "package:simple_store_gen/simple_store_gen.dart"
+        builder_factories: ["valueBuilder"]
+        build_extensions: {".dart": ["value.g.part"]}
+        auto_apply: dependents
+        build_to: cache
+        applies_builders: ["source_gen|combining_builder"]
+
+    page:
+        import: "package:simple_store_gen/simple_store_gen.dart"
+        builder_factories: ["pageBuilder"]
+        build_extensions: {".dart": ["page.g.part"]}
+        auto_apply: dependents
+        build_to: cache
+        applies_builders: ["source_gen|combining_builder"]
