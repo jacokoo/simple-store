@@ -26,7 +26,7 @@ mixin _StateReference on _StateHolder {
 
     bool _haveReference(_StateKey key) => __refs.containsKey(key);
 
-    void _updateReference(StoreSetter set, _StateKey key) {
+    void _updateReference<T extends SimpleState>(StoreSetter set, _StateKey<T> key) {
         if (!_haveReference(key)) return;
 
         final s = _get(key);
@@ -44,7 +44,7 @@ mixin _StateReference on _StateHolder {
         _updateState(key, s, setter);
     }
 
-    void _updateState(_StateKey key, SimpleState v, StoreSetter set) {
+    void _updateState<T extends SimpleState>(_StateKey<T> key, SimpleState v, StoreSetter set) {
         set._push(this);
         if (__refSetters.containsKey(key)) {
             __refSetters[key](v, set);

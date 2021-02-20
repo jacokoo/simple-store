@@ -15,7 +15,7 @@ part './store/util.dart';
 part './module/module.dart';
 part './module/app.dart';
 
-abstract class Store<T extends SimpleAction> with _StateHolder, _StateReference, _EventHolder, _Listenable<Set<_StateKey>> {
+abstract class Store<T extends SimpleAction> with _Listenable<Set<_StateKey>>, _StateHolder, _StateReference, _EventHolder {
     Store __parent;
     Store __connectedStore;
 

@@ -10,8 +10,7 @@ class _StateKey<T extends SimpleState> {
 
     @override
     bool operator ==(dynamic o) {
-        return identical(o, this) ||
-            (o is _StateKey && identical(type, o.type) && identical(name, o.name));
+        return o == this || (o is _StateKey && type == o.type && name == o.name);
     }
 
     @override
@@ -23,7 +22,7 @@ class _StateKey<T extends SimpleState> {
     }
 }
 
-mixin _StateHolder {
+mixin _StateHolder on _Listenable<Set<_StateKey>> {
     Map<_StateKey, SimpleState> __state = {};
     Map<Type, NamedStateInitializer> __initializers = {};
 
@@ -41,11 +40,15 @@ mixin _StateHolder {
         return __state[key];
     }
 
-    void _set<T extends SimpleState>(bool isInit, _StateKey key, T t) {
+    bool _set<T extends SimpleState>(bool isInit, _StateKey key, T t) {
         if (!isInit && !__state.containsKey(key)) {
             throw UnknownStateException(T);
         }
-        __state[key] = t;
+        if (__state[key] != t) {
+            __state[key] = t;
+            return true;
+        }
+        return false;
     }
 
     void _addNamed<T extends SimpleState>(NamedStateInitializer initializer) {
@@ -63,14 +66,14 @@ mixin _StateHolder {
 
 class StoreSetter with Initializer {
     bool _isInit = false;
-    Store _current;
-    List<Store> _stack = [];
-    Map<Store, Set<_StateKey>> _changed = {};
+    _StateReference _current;
+    List<_StateReference> _stack = [];
+    Map<_StateReference, Set<_StateKey>> _changed = {};
     int _count = 0;
 
     StoreSetter._(this._isInit);
 
-    void _push(Store store) {
+    void _push(_StateReference store) {
         if (store == _current) {
             _count ++;
             return;
@@ -93,21 +96,20 @@ class StoreSetter with Initializer {
     }
 
     void call<T extends SimpleState>(T t, {dynamic name}) {
+        final key = _StateKey<T>(T, name);
+        _key(key, t);
+    }
+
+    void _key<T extends SimpleState>(_StateKey<T> key, T t) {
         _do(() {
-            final key = _StateKey<T>(T, name);
-            _current._set(_isInit, key, t);
+            if (!_current._set(_isInit, key, t)) {
+                return;
+            }
             _changed[_current].add(key);
 
             if (_current._haveReference(key)) {
                 _current._updateReference(this, key);
             }
-        });
-    }
-
-    void _key<T extends SimpleState>(_StateKey key, T t) {
-        _do(() {
-            _current._set(_isInit, key, t);
-            _changed[_current].add(key);
         });
     }
 
@@ -124,7 +126,7 @@ class StoreSetter with Initializer {
 }
 
 class StoreGetter with Initializer {
-    final Store _owner;
+    final _StateHolder _owner;
     StoreGetter._(this._owner);
 
     T call<T extends SimpleState>({dynamic name}) {

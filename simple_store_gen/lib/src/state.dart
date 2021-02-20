@@ -41,6 +41,9 @@ abstract class ValueObjectGenerator<T> extends BaseGenerator<T> {
         final sts = params.map((e) => '${e.name} == UNSET ? _${e.name} : ${e.name} as ${e.type}').join(',\n');
         final tss = params.map((e) => '${e.name}: \$${e.name}').join(', ');
 
+        final equals = params.map((e) => '${e.name} == o.${e.name}').join(' && ');
+        final hash = params.map((e) => e.name).join(', ');
+
         final cfs = fes.map((e) => '${e.type} _${e.name};').join('\n');
         final caches = fes.map((e) => '''
         @override
@@ -69,6 +72,14 @@ abstract class ValueObjectGenerator<T> extends BaseGenerator<T> {
             String toString() {
                 return '$name($tss)';
             }
+
+            @override
+            bool operator ==(dynamic o) {
+                return o == this || (o is _$name${equals.isEmpty ? '' : ' && '}$equals);
+            }
+
+            @override
+            int get hashCode => hashValues(runtimeType${hash.isEmpty ? '' : ', '}$hash);
         }
         ''';
     }
