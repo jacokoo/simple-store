@@ -1,4 +1,3 @@
-
 import 'package:build/build.dart';
 import 'package:simple_store_gen/src/action.dart';
 import 'package:simple_store_gen/src/page.dart';

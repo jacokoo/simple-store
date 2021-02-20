@@ -130,4 +130,8 @@ class StoreGetter with Initializer {
     T call<T extends SimpleState>({dynamic name}) {
         return _do(() => _owner._get(_StateKey<T>(T, name)));
     }
+
+    bool has<T extends SimpleState>({dynamic name}) {
+        return _do(() => _owner._haveState(_StateKey<T>(T, name)));
+    }
 }

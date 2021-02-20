@@ -21,6 +21,7 @@ class PageGenerator extends BaseGenerator<PageAnnotation> {
 
         final fns = cs.map((e) => '@required Widget Function(${e.redirect.name}) ${e.name}').join(', ');
         final sts = cs.map((e) => 'if (this is ${e.redirect.name}) return ${e.name}(this);').join('\n');
+        final ccs = await Future.wait(cs.map((ee) => createConstructorClass(ee, e.name, false, true, step)));
         return ['''
         mixin _\$${e.name} {
             Widget _when({$fns}) {
@@ -28,6 +29,6 @@ class PageGenerator extends BaseGenerator<PageAnnotation> {
                 return null;
             }
         }
-        '''] + cs.map((ee) => createConstructorClass(ee, e.name, false, true)).toList();
+        '''] + ccs;
     }
 }

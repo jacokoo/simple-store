@@ -4,20 +4,22 @@ import 'package:simple_store_gen/src/action.dart';
 import 'package:simple_store_gen/src/base.dart';
 import 'package:simple_store_base/simple_store_base.dart';
 
+import 'base.dart';
+
 abstract class ValueObjectGenerator<T> extends BaseGenerator<T> {
     @override
     Future<List<String>> doGenerate(ClassElement e, BuildStep step) async {
-        final params = await validate(e, step);
-        final caches = e.fields.where((ee) => ee.name.startsWith('_')).toList();
+        final params = await Future.wait((await validate(e, step)).map((e) => TypedItem.fromParam(e, step)));
+        final caches = await Future.wait(e.fields.where((ee) => ee.name.startsWith('_')).map((e) => TypedItem.fromField(e, step)));
         return [generateMixin(e.name, params, caches), generateSub(e.name, params, caches)];
     }
 
     Future<List<ParameterElement>> validate(ClassElement e, BuildStep step);
 
-    String generateMixin(String name, List<ParameterElement> params, List<FieldElement> fes) {
-        final fields = params.map((e) => '${e.typeName} get ${e.name};').join('\n');
-        final ps = params.map((e) => '${e.typeName} ${e.name}').join(', ');
-        final caches = fes.map((e) => '${e.typeName} get ${e.name.substring(1)};').join('\n');
+    String generateMixin(String name, List<TypedItem> params, List<TypedItem> fes) {
+        final fields = params.map((e) => '${e.type} get ${e.name};').join('\n');
+        final ps = params.map((e) => '${e.type} ${e.name}').join(', ');
+        final caches = fes.map((e) => '${e.type} get ${e.name.substring(1)};').join('\n');
 
         return '''
         mixin _\$$name {
@@ -30,19 +32,19 @@ abstract class ValueObjectGenerator<T> extends BaseGenerator<T> {
         ''';
     }
 
-    String generateSub(String name, List<ParameterElement> params, List<FieldElement> fes) {
-        final fields = params.map((e) => 'final ${e.typeName} _${e.name};').join('\n');
+    String generateSub(String name, List<TypedItem> params, List<TypedItem> fes) {
+        final fields = params.map((e) => 'final ${e.type} _${e.name};').join('\n');
         final cp = params.map((e) => 'this._${e.name}').join(', ');
-        final getters = params.map((e) => '@override\n ${e.typeName} get ${e.name} => _${e.name};').join('\n');
+        final getters = params.map((e) => '@override\n ${e.type} get ${e.name} => _${e.name};').join('\n');
 
         final cps = params.map((e) => 'Object ${e.name} = UNSET').join(', ');
-        final sts = params.map((e) => '${e.name} == UNSET ? _${e.name} : ${e.name} as ${e.typeName}').join(',\n');
+        final sts = params.map((e) => '${e.name} == UNSET ? _${e.name} : ${e.name} as ${e.type}').join(',\n');
         final tss = params.map((e) => '${e.name}: \$${e.name}').join(', ');
 
-        final cfs = fes.map((e) => '${e.typeName} _${e.name};').join('\n');
+        final cfs = fes.map((e) => '${e.type} _${e.name};').join('\n');
         final caches = fes.map((e) => '''
         @override
-        ${e.typeName} get ${e.name.substring(1)} {
+        ${e.type} get ${e.name.substring(1)} {
             if (_${e.name} == null) {
                 _${e.name} = ${e.name};
             }

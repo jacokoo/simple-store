@@ -1,9 +1,10 @@
-import 'package:analyzer/dart/analysis/session.dart';
-import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/ast/token.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:simple_store_gen/src/base.dart';
 import 'package:simple_store_base/simple_store_base.dart';
+
+import 'base.dart';
 
 class Redirect {
     final String name;
@@ -36,8 +37,9 @@ class ActionGenerator extends BaseGenerator<ActionAnnotation> {
         });
         final cs = await Future.wait(css);
 
-        final fns = cs.map((e) => '@required Future<${e.redirect.generics.first}> Function(${e.redirect.name}) ${e.name}').join(', ');
-        final sts = cs.map((e) => 'if (this is ${e.redirect.name}) return ${e.name}(this);').join('\n');
+        final fns = cs.map((e) => '@required Future<${e.redirect.generics.first}> Function(${e.redirect.name}) ${_noDash(e.name)}').join(', ');
+        final sts = cs.map((e) => 'if (this is ${e.redirect.name}) return ${_noDash(e.name)}(this);').join('\n');
+        final ccs = await Future.wait(cs.map((ee) => createConstructorClass(ee, e.name, true, false, step)));
         return ['''
         mixin _\$${e.name} {
             Future<dynamic> _when({$fns}) {
@@ -45,13 +47,15 @@ class ActionGenerator extends BaseGenerator<ActionAnnotation> {
                 return null;
             }
         }
-        '''] + cs.map((ee) => createConstructorClass(ee, e.name, true, false)).toList();
+        '''] + ccs;
     }
 
 }
 
-String createConstructorClass(ConstructorInfo info, String parent, bool haveGeneric, bool haveName) {
-    final fields = info.params.map((e) => 'final ${e.typeName} ${e.name};');
+Future<String> createConstructorClass(ConstructorInfo info, String parent, bool haveGeneric, bool haveName, BuildStep step) async {
+    final ts = await Future.wait(info.params.map((e) => TypedItem.fromParam(e, step)));
+
+    final fields = ts.map((e) => 'final ${e.type} ${e.name};');
     final named = info.params.where((e) => e.isNamed).map((e) => 'this.${e.name}').join(',');
     final df = info.params.where((e) => e.isRequiredPositional).map((e) => 'this.${e.name}').join(',');
     final ops = info.params.where((e) => e.isOptionalPositional).map((e) => 'this.${e.name}').join(',');
@@ -84,23 +88,26 @@ Future<Redirect> getRedirectConstructor(ConstructorElement c, BuildStep step) as
             type.typeArguments.map((e) => e.element.name).toList()
         );
     }
-    final ast = await _getAst(c, step);
+    final ast = await getAst(c, step);
     c.ensure(ast.endToken.stringValue == ';', 'expect ";"');
     var t = ast.endToken.previous;
     final gs = <String>[];
     if (t.stringValue == '>') {
         t = t.previous;
         c.ensure(t.stringValue != '<', 'expect generic type');
+        var ts = <String>[];
         while (t.stringValue != '<' && t.charOffset > c.nameOffset) {
             final v = t.value();
             if (v == ',') {
+                gs.insert(0, ts.join(''));
                 t = t.previous;
                 continue;
             };
-            gs.insert(0, v.toString());
+            ts.insert(0, v == Keyword.DYNAMIC ? 'dynamic' : v.toString());
             t = t.previous;
         }
         c.ensure(t.stringValue == '<', 'expect "<" but got ${t.stringValue}');
+        if (ts.isNotEmpty) gs.insert(0, ts.join(''));
         t = t.previous;
     }
 
@@ -111,12 +118,10 @@ Future<Redirect> getRedirectConstructor(ConstructorElement c, BuildStep step) as
     return Redirect(name, gs);
 }
 
-Future<AstNode> _getAst(ConstructorElement c, BuildStep step) async {
-    try {
-        return c.session.getParsedLibraryByElement(c.library).getElementDeclaration(c).node;
-    } on InconsistentAnalysisException {
-        final id = await step.resolver.assetIdForElement(c);
-        final lib = await step.resolver.libraryFor(id);
-        return lib.session.getParsedLibraryByElement(lib).getElementDeclaration(c).node;
+String _noDash(String input) {
+    var s = input;
+    while (s.isNotEmpty && s[0] == '_') {
+        s = s.substring(1);
     }
+    return s;
 }

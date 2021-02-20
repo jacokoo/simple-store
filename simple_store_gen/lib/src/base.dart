@@ -1,6 +1,42 @@
+import 'package:analyzer/dart/analysis/session.dart';
+import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/element/type.dart';
 import 'package:build/src/builder/build_step.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:source_gen/source_gen.dart';
+
+Future<AstNode> getAst(Element c, BuildStep step) async {
+    try {
+        return c.session.getParsedLibraryByElement(c.library).getElementDeclaration(c).node;
+    } on InconsistentAnalysisException {
+        final id = await step.resolver.assetIdForElement(c);
+        final lib = await step.resolver.libraryFor(id);
+        return lib.session.getParsedLibraryByElement(lib).getElementDeclaration(c).node;
+    }
+}
+
+class TypedItem {
+    final String type;
+    final String name;
+    TypedItem(this.type, this.name);
+
+    static Future<TypedItem> fromParam(ParameterElement item, BuildStep step) {
+        return _create(item, item.type, step);
+    }
+
+    static Future<TypedItem> fromField(FieldElement item, BuildStep step) {
+        return _create(item, item.type, step);
+    }
+
+    static Future<TypedItem> _create(Element e, DartType type, BuildStep step) async {
+        var name = type.getDisplayString(withNullability: false);
+        final ast = await getAst(e, step);
+        if (ast.beginToken.next.toString() == '.') {
+            name = '${ast.beginToken.toString()}.$name';
+        }
+        return TypedItem(name, e.name);
+    }
+}
 
 extension ElementCheck on Element {
     void ensure(bool condition, String message) {
@@ -8,14 +44,6 @@ extension ElementCheck on Element {
             throw InvalidGenerationSourceError(message, element: this);
         }
     }
-}
-
-extension ParameterType on ParameterElement {
-    String get typeName => type.getDisplayString(withNullability: false);
-}
-
-extension FieldType on FieldElement {
-    String get typeName => type.getDisplayString(withNullability: false);
 }
 
 abstract class BaseGenerator<T> extends GeneratorForAnnotation<T> {

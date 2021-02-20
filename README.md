@@ -35,6 +35,8 @@ dart pub run build_runner watch
 那么需要在文件中加入这一行:
 
 ```dart
+import 'package:simple_store/simple_store.dart';
+
 part 'store.g.dart';
 ```
 
