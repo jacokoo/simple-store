@@ -75,7 +75,7 @@ abstract class ValueObjectGenerator<T> extends BaseGenerator<T> {
 
             @override
             bool operator ==(dynamic o) {
-                return o == this || (o is _$name${equals.isEmpty ? '' : ' && '}$equals);
+                return identical(o, this) || (o is _$name${equals.isEmpty ? '' : ' && '}$equals);
             }
 
             @override

@@ -13,9 +13,9 @@ abstract class FooPages extends SimplePage with _$FooPages {
 
 class FooModule extends Module<FooPages> {
     @override
-    Widget buildPage(ModuleState nav, FooPages pages) => pages._when(
+    Widget buildPage(ModuleState module, FooPages pages) => pages._when(
         foo: (_) => Center(child: TextButton(child: Text('pop foo2'), onPressed: () {
-                nav.to(FooPages.foo2());
+                module.navTo(FooPages.foo2());
         })),
 
         foo2: (_) => Scaffold(

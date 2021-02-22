@@ -12,7 +12,7 @@ class TodoListPage extends StatelessWidget {
             appBar: AppBar(
                 title: Text('TODO'),
                 actions: [IconButton(icon: Icon(Icons.add), onPressed: () {
-                    context.navigateTo(TodoPages.add());
+                    context.navTo(TodoPages.add());
                 })]
             ),
             body: SafeArea(child: Container(child: Column(children: [

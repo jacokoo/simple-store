@@ -8,7 +8,9 @@ mixin Initializer {
     }
 
     T _do<T>(T Function() fn) {
-        if (_ended) return null;
+        if (_ended) {
+            throw InitializerEndedException(this);
+        }
         return fn();
     }
 }
@@ -24,7 +26,7 @@ class StoreInitializer with Initializer {
     @override
     void _end() {
         super._end();
-        _setter._pop();
+        _setter._pop(this._owner);
         _setter._end();
     }
 

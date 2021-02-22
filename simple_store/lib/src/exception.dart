@@ -11,7 +11,7 @@ class UnknownActionException implements Exception {
 }
 
 class UnknownStateException implements Exception {
-    final Type type;
+    final Object type;
     UnknownStateException(this.type);
 
     @override
@@ -27,5 +27,15 @@ class UnknownEventException implements Exception {
     @override
     String toString() {
         return 'Event Emitter $type is not found. Note that event must initialized before listen';
+    }
+}
+
+class InitializerEndedException implements Exception {
+    final Object initializer;
+    InitializerEndedException(this.initializer);
+
+    @override
+    String toString() {
+        return '$initializer is out of scope';
     }
 }

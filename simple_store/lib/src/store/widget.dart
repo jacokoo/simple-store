@@ -18,6 +18,36 @@ abstract class Component extends StatelessWidget with StoreCreator {
     Widget doBuild(BuildContext context);
 }
 
+abstract class ValueComponent<T> extends StatelessWidget with StoreCreator {
+    final T _initialValue;
+    final _StoreAware _aware = _StoreAware();
+    ValueComponent({T intialValue, Key key}): _initialValue = intialValue, super(key: key);
+
+    void init(ReferenceCreator init) {}
+
+    @override
+    @nonVirtual
+    Store createStore() {
+        return _ValueStore<T>(initialValue: _initialValue, initializer: init);
+    }
+
+    @override
+    @nonVirtual
+    Widget build(BuildContext context) {
+        return _StoreWidget(Store._of(context, false), this, doBuild, _aware);
+    }
+
+    Widget doBuild(BuildContext context);
+
+    Widget watch({Widget Function(T) builder}) {
+        return Watch<_ValueState>(builder: (vs) => builder(vs.value));
+    }
+
+    Future<dynamic> set(T t) {
+        return _aware((store) => store.dispatch(null, _SetValueAction(t)));
+    }
+}
+
 class Watch<T extends SimpleState> extends _Watch {
     Watch({Widget Function(T t) builder, dynamic name}):
             super(builder: (d) => builder(d[0]), watchedKeys: [_StateKey<T>(T, name)]);
@@ -86,11 +116,21 @@ Future<void> _postDispatchAction(Store store, List<SimpleAction> actions) {
     return c.future;
 }
 
+class _StoreAware {
+    Store _store;
+
+    dynamic call(dynamic Function(Store) fn) {
+        assert(_store != null);
+        return fn(_store);
+    }
+}
+
 class _StoreWidget<T extends SimpleAction> extends StatefulWidget {
     final Store parent;
     final WidgetBuilder child;
     final StoreCreator creator;
-    _StoreWidget(this.parent, this.creator, this.child);
+    final _StoreAware aware;
+    _StoreWidget(this.parent, this.creator, this.child, [this.aware]);
 
     @override
     __StoreWidgetState createState() => __StoreWidgetState();
@@ -102,14 +142,17 @@ class __StoreWidgetState extends State<_StoreWidget> {
     void initState() {
         super.initState();
 
-        assert(() {
-            print('store inited');
-            return true;
-        }());
 
         store = widget.creator.createStore();
         store._parent = widget.parent;
         store._init();
+
+        widget.aware?._store = store;
+
+        assert(() {
+            print('store: ${store.runtimeType} inited');
+            return true;
+        }());
 
         _postDispatchAction(store, widget.creator.initActions);
     }
@@ -122,9 +165,10 @@ class __StoreWidgetState extends State<_StoreWidget> {
     @override
     void dispose() {
         assert(() {
-            print('store disposed');
+            print('store: ${store.runtimeType} disposed');
             return true;
         }());
+        widget.aware?._store = null;
         store._willCallDispose();
         _postDispatchAction(store, widget.creator.disposeActions).whenComplete(() => store._dispose());
         super.dispose();

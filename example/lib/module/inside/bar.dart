@@ -15,13 +15,13 @@ abstract class BarPages extends SimplePage with _$BarPages {
 
 class BarModule extends Module<BarPages> {
     @override
-    Widget buildPage(ModuleState nav, BarPages pages) => pages._when(
+    Widget buildPage(ModuleState module, BarPages pages) => pages._when(
         bar: (_) => Center(child: Column(children: [
             TextButton(child: Text('pop bar2'), onPressed: () {
-                nav.to(BarPages.bar2());
+                module.navTo(BarPages.bar2());
             }),
             TextButton(child: Text('pop todo'), onPressed: () {
-                nav.to(BarPages.todo());
+                module.navTo(BarPages.todo());
             })
         ])),
 

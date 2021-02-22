@@ -10,7 +10,7 @@ class _StateKey<T extends SimpleState> {
 
     @override
     bool operator ==(dynamic o) {
-        return o == this || (o is _StateKey && type == o.type && name == o.name);
+        return identical(this, o) || (o is _StateKey && type == o.type && name == o.name);
     }
 
     @override
@@ -42,7 +42,7 @@ mixin _StateHolder on _Listenable<Set<_StateKey>> {
 
     bool _set<T extends SimpleState>(bool isInit, _StateKey key, T t) {
         if (!isInit && !__state.containsKey(key)) {
-            throw UnknownStateException(T);
+            throw UnknownStateException(t);
         }
         if (__state[key] != t) {
             __state[key] = t;
@@ -86,13 +86,19 @@ class StoreSetter with Initializer {
         }
     }
 
-    void _pop() {
+    void _pop(_StateReference store) {
         if (_count != 0) {
             _count --;
             return;
         }
+        final poped = _stack.removeLast();
+        assert(identical(poped, store), '''
+            Incorrect state.
+            This might because StoreSetter is used when action dispatch is completed.
+            Check if there are some async function called without await during action handle.
+        ''');
 
-        _current = _stack.removeLast();
+        _current = _stack.isEmpty ? null : _stack.last;
     }
 
     void call<T extends SimpleState>(T t, {dynamic name}) {
@@ -115,7 +121,7 @@ class StoreSetter with Initializer {
 
     @override
     void _end() {
-        assert(_stack.isEmpty);
+        assert(_stack.isEmpty, 'stack $_stack is not empty');
         if (!_isInit) {
             _changed.entries.forEach((e) {
                 e.key._notify(e.value);

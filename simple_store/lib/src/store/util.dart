@@ -5,8 +5,8 @@ extension ContextDispatch on BuildContext {
         return Store._of(this, true).dispatch(null, action);
     }
 
-    Future<dynamic> navigateTo<T extends SimplePage>(T state) {
-        return Module.of(this).to(state);
+    Future<dynamic> navTo<T extends SimplePage>(T state) {
+        return Module.of(this).navTo(state);
     }
 }
 
@@ -44,11 +44,10 @@ class ReadOnlyStore extends EmptyStore {
     }
 }
 
-
-class ValueStore<T> extends Store<_SetValueAction> {
+class _ValueStore<T> extends Store<_SetValueAction> {
     final T initialValue;
-    final void Function(StoreInitializer) initializer;
-    ValueStore({this.initialValue, this.initializer});
+    final void Function(ReferenceCreator) initializer;
+    _ValueStore({this.initialValue, this.initializer});
 
     @override
     Future handle(StoreSetter set, StoreGetter get, _SetValueAction action) async {
@@ -58,6 +57,7 @@ class ValueStore<T> extends Store<_SetValueAction> {
     @override
     void init(StoreInitializer init) {
         init.state(_ValueState(initialValue));
+        initializer(ReferenceCreator._(init));
     }
 }
 

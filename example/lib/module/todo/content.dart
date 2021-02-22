@@ -34,7 +34,7 @@ class TodoContent extends StatelessWidget {
                 )),
                 Spacer(),
                 IconButton(icon: Icon(Icons.update), onPressed: () async {
-                    final re = await context.navigateTo(TodoPages.edit(todo));
+                    final re = await context.navTo(TodoPages.edit(todo));
                     print('navigate result $re');
                 }),
 

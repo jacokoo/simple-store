@@ -30,11 +30,24 @@ abstract class Store<T extends SimpleAction> with _Listenable<Set<_StateKey>>, _
         if (set != null) {
             return _handle(set, action);
         }
+        assert(() {
+            print('$runtimeType start dispatch $action');
+            return true;
+        }());
 
         set = StoreSetter._(false);
-        return _handle(set, action).whenComplete(() {
-            set._end();
-        }).catchError(onError);
+        return _handle(set, action)
+            .then((value) {
+                set._end();
+                return value;
+            })
+            .whenComplete(() {
+                assert(() {
+                    print('$runtimeType dispatch $action end');
+                    return true;
+                }());
+            })
+            .catchError(onError);
     }
 
     @protected
@@ -47,12 +60,12 @@ abstract class Store<T extends SimpleAction> with _Listenable<Set<_StateKey>>, _
     void dispose() {}
 
     @protected
-    void onError(dynamic e) {
+    void onError(dynamic e, dynamic stack) {
         if (__parent == null) {
-            print(e);
-            return;
+            print('$e\n $stack');
+            throw e;
         }
-        __parent.onError(e);
+        __parent.onError(e, stack);
     }
 
     set _parent (Store parent) {
@@ -70,7 +83,14 @@ abstract class Store<T extends SimpleAction> with _Listenable<Set<_StateKey>>, _
 
     Future<dynamic> _handle(StoreSetter set, SimpleAction action) async {
         if (_support(action)) {
-            return _withSet(set, (getter) => handle(set, getter, action));
+            set._push(this);
+            final getter = StoreGetter._(this);
+            try {
+                return await handle(set, getter, action);
+            } finally {
+                getter._end();
+                set._pop(this);
+            }
         }
 
         if (_parent != null) {
@@ -78,17 +98,6 @@ abstract class Store<T extends SimpleAction> with _Listenable<Set<_StateKey>>, _
         }
 
         throw UnknownActionException(action);
-    }
-
-    Future<dynamic> _withSet(StoreSetter set, Future<dynamic> Function(StoreGetter) fn) {
-        set._push(this);
-        final getter = StoreGetter._(this);
-        try {
-            return fn(getter);
-        } finally {
-            getter._end();
-            set._pop();
-        }
     }
 
     // Call this method before dispatch disposeActions

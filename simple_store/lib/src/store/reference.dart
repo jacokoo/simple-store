@@ -51,7 +51,7 @@ mixin _StateReference on _StateHolder {
         } else {
             set._key(key, v);
         }
-        set._pop();
+        set._pop(this);
     }
 
     void _disposeReference() {

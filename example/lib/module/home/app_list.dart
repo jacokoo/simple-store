@@ -18,14 +18,14 @@ class AppListWidget extends StatelessWidget {
                 title: Text('Todo App'),
                 subtitle: Text('Have ${hs.todos.length} todos'),
                 onTap: () {
-                    context.navigateTo(HomePages.todo(hs.todos));
+                    context.navTo(HomePages.todo(hs.todos));
                 },
             )),
             Divider(height: 1, indent: 14),
             ListTile(
                 title: Text('Inside demo'),
                 onTap: () {
-                    context.navigateTo(HomePages.inside());
+                    context.navTo(HomePages.inside());
                 },
             )
         ],

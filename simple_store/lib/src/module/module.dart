@@ -6,7 +6,7 @@ abstract class Module<K extends SimplePage> extends StatelessWidget with StoreCr
     K get defaultPage;
 
     /// Build page content for the specified page
-    Widget buildPage(ModuleState nav, K page);
+    Widget buildPage(ModuleState module, K page);
 
     /// Create `Page` object for navigation.
     Page createPage(Key key, Widget child) {
@@ -31,8 +31,18 @@ abstract class Module<K extends SimplePage> extends StatelessWidget with StoreCr
 }
 
 abstract class ModuleState {
-    Future<dynamic> to(SimplePage page);
+    Future<dynamic> navTo(SimplePage page);
     void pop(dynamic result);
+}
+
+mixin ModuleStore on Store {
+    Future<dynamic> navTo(SimplePage page, [StoreSetter set]) {
+        return dispatch(set, _NavigateAction.navTo(page));
+    }
+
+    void pop(dynamic result, [StoreSetter set]) {
+        dispatch(set, _NavigateAction.pop(result));
+    }
 }
 
 class PageState extends SimpleState {
@@ -70,6 +80,8 @@ class _ModuleNode extends ModuleState with _PageCollector {
 
     Future<void> dispose() async {
         _listenerRemover();
+        _disposePages(_shownPages);
+        _shownPages = [];
         _store._willCallDispose();
         await Future.wait(_module.disposeActions.map((e) => _store.dispatch(null, e)));
         _store.dispose();
@@ -146,8 +158,7 @@ class _ModuleNode extends ModuleState with _PageCollector {
     }
 
     @override
-    Future<dynamic> to(SimplePage page) {
-        print('nav to $page');
+    Future<dynamic> navTo(SimplePage page) {
         return _store._parent.dispatch(null, _NavigateAction.navTo(page)).then((value) {
             if (value == null) return null;
             return (value as _NavigateResult)._future;
