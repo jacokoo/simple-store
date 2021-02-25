@@ -49,12 +49,14 @@ mixin StoreNavigate<T extends SimpleAction> on Store<T> {
     }
 }
 
-class PageState extends SimpleState {
-    Completer _completer;
-    List<SimplePage> _stack;
-    PageState._(SimplePage intialPage): _stack = [intialPage];
-
+abstract class PageState extends SimpleState with _$PageState {
+    PageState._();
+    factory PageState._create(Completer _completer, List<SimplePage> _stack) = _PageState;
     SimplePage get current => _stack.last;
+
+    static PageState _new(SimplePage initialPage) {
+        return PageState._create(null, [initialPage]);
+    }
 }
 
 class _ModuleNode extends ModuleState with _PageCollector {
@@ -72,7 +74,7 @@ class _ModuleNode extends ModuleState with _PageCollector {
 
     void init() {
         _store._init();
-        _listenerRemover = _store._parent._listen((v) {
+        _listenerRemover = _store._parent._listen((_) {
             _changePages(_currentPages(), false);
         });
         _changePages(_currentPages(), true);
@@ -297,7 +299,6 @@ class __ModuleInnerWidgetState extends State<_ModuleInnerWidget> {
     }
 }
 
-
 abstract class _NavigateAction extends SimpleAction with _$_NavigateAction {
     const _NavigateAction._();
     const factory _NavigateAction.navTo(SimplePage page) = _NavTo;
@@ -325,13 +326,11 @@ class _ModuleStore<T extends SimplePage> extends Store<_NavigateAction> {
             }
 
             final state = get<PageState>();
-            var stack = state._stack;
-
-            if (stack.last == p.page) {
+            if (state.current == p.page) {
                 return null;
             }
 
-            state._completer = Completer();
+            var stack = List<SimplePage>.from(state._stack);
 
             final idx = stack.indexOf(p.page);
             if (idx == -1) {
@@ -342,21 +341,21 @@ class _ModuleStore<T extends SimplePage> extends Store<_NavigateAction> {
             } else {
                 stack = stack.sublist(0, idx);
             }
-
-            state._stack = stack;
-            set(state);
-
-            return _NavigateResult(state._completer.future);
+            final completer = Completer();
+            set(PageState._create(completer, stack));
+            return _NavigateResult(completer.future);
         },
 
         pop: (p) async {
             final state = get<PageState>();
 
             if (state._stack.length > 1) {
-                state._stack.removeLast();
                 state._completer?.complete(p.result);
-                state._completer = null;
-                set(state);
+
+                final stack = List<SimplePage>.from(state._stack);
+                stack.removeLast();
+
+                set(PageState._create(null, stack));
                 return true;
             }
 
@@ -370,37 +369,6 @@ class _ModuleStore<T extends SimplePage> extends Store<_NavigateAction> {
 
     @override
     void init(StoreInitializer init) {
-        init.state(PageState._(_intialPage));
-    }
-}
-
-mixin _$_NavigateAction {
-    Future<dynamic> _when({
-        @required Future<void> Function(_NavTo) navTo,
-        @required Future<void> Function(_Pop) pop
-    }) {
-        if (this is _NavTo) return navTo(this);
-        if (this is _Pop) return pop(this);
-        return null;
-    }
-}
-
-class _NavTo extends _NavigateAction {
-    final SimplePage page;
-    const _NavTo(this.page): super._();
-
-    @override
-    String toString() {
-        return '_NavigateAction.push(page: $page)';
-    }
-}
-
-class _Pop extends _NavigateAction {
-    final dynamic result;
-    const _Pop(this.result) : super._();
-
-    @override
-    String toString() {
-        return '_NavigateAction.pop(result: $result)';
+        init.state(PageState._new(_intialPage));
     }
 }

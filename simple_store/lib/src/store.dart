@@ -14,6 +14,7 @@ part './store/util.dart';
 
 part './module/module.dart';
 part './module/app.dart';
+part './module/generated.dart';
 
 abstract class Store<T extends SimpleAction> with _Listenable<Set<_StateKey>>, _StateHolder, _StateReference, _EventHolder {
     Store __parent;

@@ -108,6 +108,7 @@ class StoreSetter {
 
         if (!_isInit) {
             _changed.entries.forEach((e) {
+                if (e.value.isEmpty) return;
                 e.key._notify(e.value);
             });
         }
