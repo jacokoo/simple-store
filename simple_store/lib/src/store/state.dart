@@ -35,14 +35,14 @@ mixin _StateHolder on _Listenable<Set<_StateKey>> {
                     return v;
                 }
             }
-            throw UnknownStateException(key.type);
+            throw UnknownStateException(key.type, runtimeType);
         }
         return __state[key];
     }
 
     bool _set<T extends SimpleState>(bool isInit, _StateKey key, T t) {
         if (!isInit && !__state.containsKey(key)) {
-            throw UnknownStateException(t);
+            throw UnknownStateException(t, runtimeType);
         }
         if (__state[key] != t) {
             __state[key] = t;
@@ -64,42 +64,25 @@ mixin _StateHolder on _Listenable<Set<_StateKey>> {
     }
 }
 
-class StoreSetter with Initializer {
-    bool _isInit = false;
-    _StateReference _current;
-    List<_StateReference> _stack = [];
-    Map<_StateReference, Set<_StateKey>> _changed = {};
-    int _count = 0;
+class StoreSetter {
+    final StoreSetter _parent;
+    final _Initializer _init;
+    final Map<_StateReference, Set<_StateKey>> _changed;
+    final _StateReference _store;
+    final bool _isInit;
 
-    StoreSetter._(this._isInit);
-
-    void _push(_StateReference store) {
-        if (store == _current) {
-            _count ++;
-            return;
-        }
-
-        _current = store;
-        _stack.add(store);
-        if (!_changed.containsKey(store)) {
-            _changed[store] = {};
+    StoreSetter._(this._isInit): _init = _Initializer(), _changed = {}, _store = null, _parent = null;
+    StoreSetter.__forSub(this._isInit, this._init, this._changed, this._store, this._parent) {
+        if (!_changed.containsKey(_store)) {
+            _changed[_store] = {};
         }
     }
 
-    void _pop(_StateReference store) {
-        if (_count != 0) {
-            _count --;
-            return;
-        }
-        final poped = _stack.removeLast();
-        assert(identical(poped, store), '''
-            Incorrect state.
-            This might because StoreSetter is used when action dispatch is completed.
-            Check if there are some async function called without await during action handle.
-        ''');
-
-        _current = _stack.isEmpty ? null : _stack.last;
+    StoreSetter _sub(_StateReference store) {
+        return StoreSetter.__forSub(_isInit, _init, _changed, store, this);
     }
+
+    bool get isInit => _isInit;
 
     void call<T extends SimpleState>(T t, {dynamic name}) {
         final key = _StateKey<T>(T, name);
@@ -107,31 +90,31 @@ class StoreSetter with Initializer {
     }
 
     void _key<T extends SimpleState>(_StateKey<T> key, T t) {
-        _do(() {
-            if (!_current._set(_isInit, key, t)) {
+        _init._do(() {
+            if (!_store._set(_isInit, key, t)) {
                 return;
             }
-            _changed[_current].add(key);
+            _changed[_store].add(key);
 
-            if (_current._haveReference(key)) {
-                _current._updateReference(this, key);
+            if (_store._haveReference(key)) {
+                _store._updateReference(this, key);
             }
         });
     }
 
-    @override
     void _end() {
-        assert(_stack.isEmpty, 'stack $_stack is not empty');
+        assert(_parent == null);
+        _init._end();
+
         if (!_isInit) {
             _changed.entries.forEach((e) {
                 e.key._notify(e.value);
             });
         }
-        super._end();
     }
 }
 
-class StoreGetter with Initializer {
+class StoreGetter with _Initializer {
     final _StateHolder _owner;
     StoreGetter._(this._owner);
 

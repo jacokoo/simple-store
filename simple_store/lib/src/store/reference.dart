@@ -45,13 +45,12 @@ mixin _StateReference on _StateHolder {
     }
 
     void _updateState<T extends SimpleState>(_StateKey<T> key, SimpleState v, StoreSetter set) {
-        set._push(this);
+        final sub = set._sub(this);
         if (__refSetters.containsKey(key)) {
-            __refSetters[key](v, set);
+            __refSetters[key](v, sub);
         } else {
-            set._key(key, v);
+            sub._key(key, v);
         }
-        set._pop(this);
     }
 
     void _disposeReference() {

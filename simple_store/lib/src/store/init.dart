@@ -1,6 +1,6 @@
 part of '../store.dart';
 
-mixin Initializer {
+class _Initializer {
     bool _ended = false;
 
     void _end() {
@@ -15,19 +15,19 @@ mixin Initializer {
     }
 }
 
-class StoreInitializer with Initializer {
+class StoreInitializer with _Initializer {
     Store _owner;
-    final StoreSetter _setter = StoreSetter._(true);
+    final StoreSetter _root = StoreSetter._(true);
+    StoreSetter _setter;
 
     StoreInitializer._(this._owner) {
-        _setter._push(_owner);
+        _setter = _root._sub(_owner);
     }
 
     @override
     void _end() {
         super._end();
-        _setter._pop(this._owner);
-        _setter._end();
+        _root._end();
     }
 
     void ref<T extends SimpleState>({dynamic name, ReferenceSetter<T> setter}) {
@@ -42,7 +42,7 @@ class StoreInitializer with Initializer {
                 p = p._parent;
             }
 
-            throw UnknownStateException(T);
+            throw UnknownStateException(T, runtimeType);
         });
     }
 

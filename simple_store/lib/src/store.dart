@@ -47,7 +47,9 @@ abstract class Store<T extends SimpleAction> with _Listenable<Set<_StateKey>>, _
                     return true;
                 }());
             })
-            .catchError(onError);
+            .catchError((e, st) {
+                onError(action, e, st);
+            });
     }
 
     @protected
@@ -60,12 +62,9 @@ abstract class Store<T extends SimpleAction> with _Listenable<Set<_StateKey>>, _
     void dispose() {}
 
     @protected
-    void onError(dynamic e, dynamic stack) {
-        if (__parent == null) {
-            print('$e\n $stack');
-            throw e;
-        }
-        __parent.onError(e, stack);
+    void onError(SimpleAction action, dynamic e, dynamic stack) {
+        print('handle $action failed\n$e\n $stack');
+        throw e;
     }
 
     set _parent (Store parent) {
@@ -83,13 +82,12 @@ abstract class Store<T extends SimpleAction> with _Listenable<Set<_StateKey>>, _
 
     Future<dynamic> _handle(StoreSetter set, SimpleAction action) async {
         if (_support(action)) {
-            set._push(this);
+            final sub = set._sub(this);
             final getter = StoreGetter._(this);
             try {
-                return await handle(set, getter, action);
+                return await handle(sub, getter, action);
             } finally {
                 getter._end();
-                set._pop(this);
             }
         }
 

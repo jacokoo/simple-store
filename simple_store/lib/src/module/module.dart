@@ -5,6 +5,10 @@ abstract class Module<K extends SimplePage> extends StatelessWidget with StoreCr
     /// The default page to show.
     K get defaultPage;
 
+    /// Indicate only one page could be shown at one time.
+    /// when navigate to a page, it will replace the previous one.
+    bool get singleActive => false;
+
     /// Build page content for the specified page
     Widget buildPage(ModuleState module, K page);
 
@@ -27,7 +31,7 @@ abstract class Module<K extends SimplePage> extends StatelessWidget with StoreCr
         return node as ModuleState;
     }
 
-    Store _createStore() => _ModuleStore<K>(defaultPage).connect(createStore());
+    Store _createStore() => _ModuleStore<K>(defaultPage, singleActive ? 1 : 2).connect(createStore());
 }
 
 abstract class ModuleState {
@@ -209,8 +213,11 @@ class _MountedModuleNode extends _ModuleNode {
     }
 
     void _changePages(List<SimplePage> news, bool isInit) {
-        news.removeAt(0);
         if (!isInit) _parent?._takePriority(this);
+        if (_module.singleActive) {
+            return;
+        }
+        news.removeAt(0);
         super._changePages(news, isInit);
     }
 }
@@ -248,23 +255,39 @@ class _ModuleInnerWidget extends StatefulWidget {
 
 class __ModuleInnerWidgetState extends State<_ModuleInnerWidget> {
     _MountedModuleNode node;
+    VoidCallback remover;
+    SimplePage current;
+    final key = _StateKey<PageState>(PageState, null);
 
     @override
     void initState() {
         super.initState();
         node = _MountedModuleNode(widget._parentNode, widget._module, widget._parentNode._notifier, widget._parentStore);
         node.init();
+
+        if (widget._module.singleActive) {
+            current = widget._module.defaultPage;
+            remover = node._store._parent._listen((_) {
+                setState(() {
+                    current = node._store._parent._get(key).current;
+                });
+            });
+        }
     }
 
     @override
     void dispose() {
+        if (remover != null) remover();
         node.dispose();
         super.dispose();
     }
 
     @override
     Widget build(BuildContext context) {
-        return node._wrap(widget._module.buildPage(node, widget._module.defaultPage));
+        if (!widget._module.singleActive) {
+            return node._wrap(widget._module.buildPage(node, widget._module.defaultPage));
+        }
+        return node._wrap(widget._module.buildPage(node, current));
     }
 }
 
@@ -282,7 +305,8 @@ class _NavigateResult {
 
 class _ModuleStore<T extends SimplePage> extends Store<_NavigateAction> {
     final dynamic _intialPage;
-    _ModuleStore(this._intialPage);
+    final int _maxStackSize;
+    _ModuleStore(this._intialPage, this._maxStackSize);
 
     @override
     Future handle(StoreSetter set, StoreGetter get, _NavigateAction action) => action._when(
@@ -305,7 +329,7 @@ class _ModuleStore<T extends SimplePage> extends Store<_NavigateAction> {
 
             final idx = stack.indexOf(p.page);
             if (idx == -1) {
-                if (stack.length >= 2) {
+                if (stack.length >= _maxStackSize) {
                     stack.removeLast();
                 }
                 stack.add(p.page);

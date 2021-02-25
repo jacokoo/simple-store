@@ -30,9 +30,13 @@ class TypedItem {
 
     static Future<TypedItem> _create(Element e, DartType type, BuildStep step) async {
         var name = type.getDisplayString(withNullability: false);
-        final ast = await getAst(e, step);
-        if (ast.beginToken.next.toString() == '.') {
-            name = '${ast.beginToken.toString()}.$name';
+        try {
+            final ast = await getAst(e, step);
+            if (ast.beginToken.next.toString() == '.') {
+                name = '${ast.beginToken.toString()}.$name';
+            }
+        } catch (ex) {
+            print('get ast for $e failed\n $ex');
         }
         return TypedItem(name, e.name);
     }

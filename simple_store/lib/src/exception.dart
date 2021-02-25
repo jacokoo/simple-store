@@ -12,11 +12,12 @@ class UnknownActionException implements Exception {
 
 class UnknownStateException implements Exception {
     final Object type;
-    UnknownStateException(this.type);
+    final Type store;
+    UnknownStateException(this.type, this.store);
 
     @override
     String toString() {
-        return 'State $type is not found. Note that state must initialized before get/set';
+        return 'State $type is not found in $store. Note that state must initialized before get/set';
     }
 }
 
