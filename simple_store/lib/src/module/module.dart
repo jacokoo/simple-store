@@ -39,7 +39,7 @@ abstract class ModuleState {
     void pop(dynamic result);
 }
 
-mixin ModuleStore on Store {
+mixin StoreNavigate<T extends SimpleAction> on Store<T> {
     Future<dynamic> navTo(SimplePage page, [StoreSetter set]) {
         return dispatch(set, _NavigateAction.navTo(page));
     }
@@ -215,8 +215,13 @@ class _MountedModuleNode extends _ModuleNode {
     void _changePages(List<SimplePage> news, bool isInit) {
         if (!isInit) _parent?._takePriority(this);
         if (_module.singleActive) {
+            if (!isInit) {
+                _children.clear();
+                _notifier.notify();
+            }
             return;
         }
+
         news.removeAt(0);
         super._changePages(news, isInit);
     }
@@ -287,6 +292,7 @@ class __ModuleInnerWidgetState extends State<_ModuleInnerWidget> {
         if (!widget._module.singleActive) {
             return node._wrap(widget._module.buildPage(node, widget._module.defaultPage));
         }
+
         return node._wrap(widget._module.buildPage(node, current));
     }
 }
