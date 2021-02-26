@@ -8,6 +8,10 @@ extension ContextDispatch on BuildContext {
     Future<dynamic> navTo<T extends SimplePage>(T state) {
         return Module.of(this).navTo(state);
     }
+
+    void pop([dynamic result]) {
+        Module.of(this).pop(result);
+    }
 }
 
 class EmptyStore extends Store {
