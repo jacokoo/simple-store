@@ -1,5 +1,5 @@
 {
-	"Simple Store state": {
+	"Simple Store - Create state": {
 		"prefix": "state",
 		"body": [
 			"@state",
@@ -11,7 +11,8 @@
 		],
 		"description": "Simple Store state"
 	},
-	"Simple Store action": {
+
+	"Simple Store - Create action": {
 		"prefix": "action",
 		"body": [
 			"@action",
@@ -23,7 +24,8 @@
 		],
 		"description": "Simple Store action"
 	},
-	"Simple Store value": {
+
+	"Simple Store - Create value": {
 		"prefix": "value",
 		"body": [
 			"@value",
@@ -35,16 +37,79 @@
 		],
 		"description": "Simple Store value"
 	},
-	"Simple Store pages": {
+
+	"Simple Store - Create pages": {
 		"prefix": "pages",
 		"body": [
 			"@page",
 			"abstract class ${1:Some}Pages extends SimplePage with _$$1Pages {",
 			"    const $1Pages._();",
 			"",
-			"    const factory $1Pages.${2:actionName}() = _${2/^(\\w)/${1:/upcase}/};",
+			"    const factory $1Pages.${2:pageName}() = _${2/^(\\w)/${1:/upcase}/};",
 			"}"
 		],
 		"description": "Simple Store pages"
+	},
+
+	"Simple Store - Create store": {
+		"prefix": "store",
+		"body": [
+			"import 'package:simple_store/simple_store.dart';",
+			"",
+			"part '${1:store}.g.dart';",
+			"",
+			"@action",
+			"abstract class ${2:Some}Action extends SimpleAction with _$$2Action {",
+			"    const $2Action._();",
+			"",
+			"    const factory $2Action.${3:actionName}() = _${3/^(\\w)/${1:/upcase}/};",
+			"}",
+			"",
+			"class $2Store extends Store<$2Action> {",
+			"    @override",
+			"    void init(StoreInitializer init) {",
+			"    }",
+			"",
+			"    @override",
+			"    Future handle(StoreSetter set, StoreGetter get, $2Action action) => action._when(",
+			"        $3: (payload) async {",
+			"            // TODO: handle action",
+			"            throw UnimplementedError();",
+			"        }",
+			"    );",
+			"}"
+		]
+	},
+
+	"Simple Store - Create module": {
+		"prefix": "module",
+		"body": [
+			"import 'package:simple_store/simple_store.dart';",
+			"",
+			"part '${1:store}.g.dart';",
+			"",
+			"@page",
+			"abstract class ${2:Some}Pages extends SimplePage with _$$2Pages {",
+			"    const $2Pages._();",
+			"",
+			"    const factory $2Pages.${3:pageName}() = _${3/^(\\w)/${1:/upcase}/};",
+			"}",
+			"",
+			"class $2Module extends Module<$2Pages> {",
+			"    @override",
+			"    $2Pages get defaultPage => $2Pages.$3();",
+			"",
+			"    @override",
+			"    Store createStore() => $2Store();",
+			"",
+			"    @override",
+			"    Widget buildPage(ModuleState module, $2Pages page) => page._when(",
+			"        $3: (navData) {",
+			"            //TODO: return page content",
+			"            throw UnimplementedError();",
+			"        }",
+			"    );",
+			"}"
+		]
 	}
 }
