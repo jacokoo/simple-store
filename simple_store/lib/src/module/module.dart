@@ -36,7 +36,7 @@ abstract class Module<K extends SimplePage> extends StatelessWidget with StoreCr
 
 abstract class ModuleState {
     Future<dynamic> navTo(SimplePage page);
-    void pop(dynamic result);
+    void pop([dynamic result]);
 }
 
 mixin StoreNavigate<T extends SimpleAction> on Store<T> {
@@ -44,7 +44,7 @@ mixin StoreNavigate<T extends SimpleAction> on Store<T> {
         return dispatch(set, _NavigateAction.navTo(page));
     }
 
-    void pop(dynamic result, [StoreSetter set]) {
+    void pop([dynamic result, StoreSetter set]) {
         dispatch(set, _NavigateAction.pop(result));
     }
 }
@@ -172,7 +172,7 @@ class _ModuleNode extends ModuleState with _PageCollector {
     }
 
     @override
-    void pop(dynamic result) {
+    void pop([dynamic result]) {
         _store._parent.dispatch(null, _NavigateAction.pop(result));
     }
 
