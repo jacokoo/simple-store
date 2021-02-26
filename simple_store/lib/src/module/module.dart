@@ -40,11 +40,11 @@ abstract class ModuleState {
 }
 
 mixin StoreNavigate<T extends SimpleAction> on Store<T> {
-    Future<dynamic> navTo(SimplePage page, [StoreSetter set]) {
+    Future<dynamic> navTo(StoreSetter set, SimplePage page) {
         return dispatch(set, _NavigateAction.navTo(page));
     }
 
-    void pop([dynamic result, StoreSetter set]) {
+    void pop(StoreSetter set, [dynamic result]) {
         dispatch(set, _NavigateAction.pop(result));
     }
 }
