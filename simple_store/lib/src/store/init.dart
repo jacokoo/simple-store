@@ -30,7 +30,7 @@ class StoreInitializer with _Initializer {
         _root._end();
     }
 
-    void ref<T extends SimpleState>({dynamic name, ReferenceSetter<T> setter}) {
+    void ref<T extends SimpleState>({dynamic name, ReferenceTransformer<T> setter}) {
         _do(() {
             final key = _StateKey<T>(T, name);
             var p = _owner._parent;

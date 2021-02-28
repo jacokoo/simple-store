@@ -6,16 +6,16 @@ mixin StoreCreator {
     List<SimpleAction> get disposeActions => [];
 }
 
-abstract class Component extends StatelessWidget with StoreCreator {
-    Component({Key key}): super(key: key);
+abstract class Component extends _StatelessWidget with StoreCreator {
+    final Key key;
+    Component({this.key}): super(key: key);
+
+    Widget build(BuildContext context);
 
     @override
-    @nonVirtual
-    Widget build(BuildContext context) {
-        return _StoreWidget(Store._of(context, false), this, doBuild);
+    Widget onBuild(BuildContext context) {
+        return _StoreWidget(Store._of(context, false), this, build);
     }
-
-    Widget doBuild(BuildContext context);
 }
 
 abstract class ValueComponent<T> extends StatelessWidget with StoreCreator {

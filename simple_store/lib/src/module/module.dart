@@ -1,16 +1,16 @@
 part of '../store.dart';
 
 /// Module holds a `Store` and create pages.
-abstract class Module<K extends SimplePage> extends StatelessWidget with StoreCreator {
+abstract class Module<T extends SimplePage> extends _StatelessWidget with StoreCreator {
     /// The default page to show.
-    K get defaultPage;
+    T get defaultPage;
 
     /// Indicate only one page could be shown at one time.
     /// when navigate to a page, it will replace the previous one.
     bool get singleActive => false;
 
     /// Build page content for the specified page
-    Widget buildPage(ModuleState module, K page);
+    Widget buildPage(ModuleState module, T page);
 
     /// Create `Page` object for navigation.
     Page createPage(Key key, Widget child) {
@@ -18,20 +18,36 @@ abstract class Module<K extends SimplePage> extends StatelessWidget with StoreCr
     }
 
     @override
-    @nonVirtual
-    Widget build(BuildContext context) {
-        final p = context.findAncestorWidgetOfExactType<_CollectorInheritedWidget>();
-        assert(p != null);
-        return _ModuleInnerWidget(p.collector, Store._of(context, false), this);
+    Widget onBuild(BuildContext context) {
+        assert(false, 'Module[$runtimeType] can not be mounted to widget tree, use MountedModule instead.');
+        return null;
     }
 
-    static ModuleState of(BuildContext context) {
+    static ModuleState _of(BuildContext context) {
         final node = context.findAncestorWidgetOfExactType<_CollectorInheritedWidget>()?.collector;
         assert(node != null && node is ModuleState);
         return node as ModuleState;
     }
 
-    Store _createStore() => _ModuleStore<K>(defaultPage, singleActive ? 1 : 2).connect(createStore());
+    Store _createStore() => _ModuleStore<T>(defaultPage, singleActive ? 1 : 2, false).connect(createStore());
+}
+
+abstract class MountedModule<T extends SimplePage> extends Module<T> {
+    @override
+    T get defaultPage => null;
+
+    @override
+    Widget onBuild(BuildContext context) {
+        final p = context.findAncestorWidgetOfExactType<_CollectorInheritedWidget>();
+        assert(p != null);
+        return _ModuleInnerWidget(p.collector, Store._of(context, false), this);
+    }
+
+    @protected
+    Widget build(BuildContext context);
+
+    @override
+    Store _createStore() => _ModuleStore<T>(defaultPage, 1, true).connect(createStore());
 }
 
 abstract class ModuleState {
@@ -52,7 +68,7 @@ mixin StoreNavigate<T extends SimpleAction> on Store<T> {
 abstract class PageState extends SimpleState with _$PageState {
     PageState._();
     factory PageState._create(Completer _completer, List<SimplePage> _stack) = _PageState;
-    SimplePage get current => _stack.last;
+    SimplePage get current => _stack.isEmpty ? null : _stack.last;
 
     static PageState _new(SimplePage initialPage) {
         return PageState._create(null, [initialPage]);
@@ -151,6 +167,7 @@ class _ModuleNode extends ModuleState with _PageCollector {
     }
 
     _ModuleNode _createModulePage(Module widget) {
+        assert(widget.defaultPage != null);
         final node = _ModuleNode(widget, _notifier, this._store);
         node.init();
         return node;
@@ -224,7 +241,6 @@ class _MountedModuleNode extends _ModuleNode {
             return;
         }
 
-        news.removeAt(0);
         super._changePages(news, isInit);
     }
 }
@@ -253,7 +269,7 @@ class _RootPageCollector with _PageCollector {
 class _ModuleInnerWidget extends StatefulWidget {
     final _PageCollector _parentNode;
     final Store _parentStore;
-    final Module _module;
+    final MountedModule _module;
     _ModuleInnerWidget(this._parentNode, this._parentStore, this._module);
 
     @override
@@ -273,7 +289,6 @@ class __ModuleInnerWidgetState extends State<_ModuleInnerWidget> {
         node.init();
 
         if (widget._module.singleActive) {
-            current = widget._module.defaultPage;
             remover = node._store._parent._listen((_) {
                 setState(() {
                     current = node._store._parent._get(key).current;
@@ -291,8 +306,8 @@ class __ModuleInnerWidgetState extends State<_ModuleInnerWidget> {
 
     @override
     Widget build(BuildContext context) {
-        if (!widget._module.singleActive) {
-            return node._wrap(widget._module.buildPage(node, widget._module.defaultPage));
+        if (!widget._module.singleActive || current == null) {
+            return node._wrap(Builder(builder: (ctx) => widget._module.build(ctx)));
         }
 
         return node._wrap(widget._module.buildPage(node, current));
@@ -313,7 +328,8 @@ class _NavigateResult {
 class _ModuleStore<T extends SimplePage> extends Store<_NavigateAction> {
     final dynamic _intialPage;
     final int _maxStackSize;
-    _ModuleStore(this._intialPage, this._maxStackSize);
+    final bool _allowEmpty;
+    _ModuleStore(this._intialPage, this._maxStackSize, this._allowEmpty);
 
     @override
     Future handle(StoreSetter set, StoreGetter get, _NavigateAction action) => action._when(
@@ -348,8 +364,8 @@ class _ModuleStore<T extends SimplePage> extends Store<_NavigateAction> {
 
         pop: (p) async {
             final state = get<PageState>();
-
-            if (state._stack.length > 1) {
+            final size = state._stack.length;
+            if ((_allowEmpty && size > 0) || (!_allowEmpty && size > 1)) {
                 state._completer?.complete(p.result);
 
                 final stack = List<SimplePage>.from(state._stack);
@@ -369,6 +385,10 @@ class _ModuleStore<T extends SimplePage> extends Store<_NavigateAction> {
 
     @override
     void init(StoreInitializer init) {
-        init.state(PageState._new(_intialPage));
+        if (_intialPage == null) {
+            init.state(PageState._create(null, []));
+        } else {
+            init.state(PageState._new(_intialPage));
+        }
     }
 }

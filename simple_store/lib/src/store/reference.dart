@@ -1,7 +1,18 @@
 part of '../store.dart';
 
 
-typedef ReferenceSetter<T extends SimpleState> = void Function(T state, StoreSetter set);
+typedef ReferenceTransformer<T extends SimpleState> = void Function(T state, ReferenceSetter set);
+
+class ReferenceSetter {
+    final StoreSetter _setter;
+    ReferenceSetter._(this._setter);
+
+    bool get isInit => _setter._isInit;
+
+    void call<T extends SimpleState>(T t, {dynamic name}) {
+        _setter.call<T>(t, name: name);
+    }
+}
 
 mixin _StateReference on _StateHolder {
     Map<_StateKey, List<_StateReference>> __refs = {};
@@ -35,7 +46,7 @@ mixin _StateReference on _StateHolder {
         });
     }
 
-    void _dependTo<T extends SimpleState>(_StateReference store, _StateKey<T> key, ReferenceSetter<T> transform, StoreSetter setter) {
+    void _dependTo<T extends SimpleState>(_StateReference store, _StateKey<T> key, ReferenceTransformer<T> transform, StoreSetter setter) {
         __refRemovers.add(store._addReference(key, this));
         final s = store._get(key);
         if (transform != null) {
@@ -45,11 +56,14 @@ mixin _StateReference on _StateHolder {
     }
 
     void _updateState<T extends SimpleState>(_StateKey<T> key, SimpleState v, StoreSetter set) {
-        final sub = set._sub(this);
-        if (__refSetters.containsKey(key)) {
-            __refSetters[key](v, sub);
-        } else {
+        if (set._isInit || !__refSetters.containsKey(key)) {
+            final sub = set._sub(this);
             sub._key(key, v);
+        }
+
+        if (__refSetters.containsKey(key)) {
+            final setter = ReferenceSetter._(set._sub(this, isInit: false));
+            __refSetters[key](v, setter);
         }
     }
 

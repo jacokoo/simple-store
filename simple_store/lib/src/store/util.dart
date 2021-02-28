@@ -1,20 +1,43 @@
 part of '../store.dart';
 
+abstract class _StatelessWidget extends ProxyWidget {
+    _StatelessWidget({Key key}): super(child: null, key: key);
+
+    @override
+    Element createElement() => _StatelessElement(this);
+
+    Widget onBuild(BuildContext context);
+}
+
+class _StatelessElement extends ProxyElement {
+    _StatelessElement(_StatelessWidget widget) : super(widget);
+
+    @override
+    _StatelessWidget get widget => super.widget as _StatelessWidget;
+
+    @override
+    Widget build() => widget.onBuild(this);
+
+    @override
+    void notifyClients(covariant ProxyWidget oldWidget) {
+    }
+}
+
 extension ContextDispatch on BuildContext {
     Future<dynamic> dispatch(SimpleAction action) {
         return Store._of(this, true).dispatch(null, action);
     }
 
     Future<dynamic> navTo<T extends SimplePage>(T state) {
-        return Module.of(this).navTo(state);
+        return Module._of(this).navTo(state);
     }
 
     void pop([dynamic result]) {
-        Module.of(this).pop(result);
+        Module._of(this).pop(result);
     }
 }
 
-class EmptyStore extends Store {
+abstract class StateOnlyStore extends Store {
     @override
     bool _support(SimpleAction action) => false;
 
@@ -22,24 +45,21 @@ class EmptyStore extends Store {
     Future handle(StoreSetter set, StoreGetter get, SimpleAction action) {
         throw UnimplementedError('Can not reach here');
     }
-
-    @override
-    void init(StoreInitializer init) {
-    }
 }
 
 class ReferenceCreator {
     final StoreInitializer _init;
     ReferenceCreator._(this._init);
 
-    void call<T extends SimpleState>({dynamic name, ReferenceSetter<T> setter}) {
+    // call is not good for editor.
+    void ref<T extends SimpleState>({dynamic name, ReferenceTransformer<T> setter}) {
         _init.ref<T>(name: name, setter: setter);
     }
 }
 
-class ReadOnlyStore extends EmptyStore {
+class ReadOnlyStore extends StateOnlyStore {
     final void Function(ReferenceCreator) initializer;
-    ReadOnlyStore(this.initializer);
+    ReadOnlyStore([this.initializer]);
 
     @override
     @mustCallSuper

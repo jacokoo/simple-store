@@ -78,11 +78,9 @@ class StoreSetter {
         }
     }
 
-    StoreSetter _sub(_StateReference store) {
-        return StoreSetter.__forSub(_isInit, _init, _changed, store, this);
+    StoreSetter _sub(_StateReference store, {bool isInit}) {
+        return StoreSetter.__forSub(isInit == null ? _isInit : isInit, _init, _changed, store, this);
     }
-
-    bool get isInit => _isInit;
 
     void call<T extends SimpleState>(T t, {dynamic name}) {
         final key = _StateKey<T>(T, name);
