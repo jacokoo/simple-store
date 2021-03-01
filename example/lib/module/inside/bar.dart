@@ -34,7 +34,7 @@ class BarModule extends Module<BarPages> {
     );
 
     @override
-    Store<SimpleAction> createStore() => EmptyStore();
+    Store<SimpleAction> createStore() => ReadOnlyStore();
 
     @override
     BarPages get defaultPage => BarPages.bar();

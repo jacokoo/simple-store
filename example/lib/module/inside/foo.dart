@@ -25,7 +25,7 @@ class FooModule extends Module<FooPages> {
     );
 
     @override
-    Store<SimpleAction> createStore() => EmptyStore();
+    Store<SimpleAction> createStore() => ReadOnlyStore();
 
     @override
     FooPages get defaultPage => const FooPages.foo();

@@ -23,7 +23,7 @@ class _SimpleStoreAppState extends State<SimpleStoreApp> {
         delegate = _RouterDelegate();
         parser = _RouteInfoParser();
         if (widget.home is Module) {
-            final node = _ModuleNode(widget.home, delegate, null);
+            final node = _ModuleNode(widget.home, delegate, null, false);
             node.init();
             collector = node;
         } else {

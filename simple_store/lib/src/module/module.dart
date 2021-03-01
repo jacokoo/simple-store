@@ -3,7 +3,7 @@ part of '../store.dart';
 /// Module holds a `Store` and create pages.
 abstract class Module<T extends SimplePage> extends _StatelessWidget with StoreCreator {
     /// The default page to show.
-    T get defaultPage;
+    T get defaultPage => null;
 
     /// Indicate only one page could be shown at one time.
     /// when navigate to a page, it will replace the previous one.
@@ -19,7 +19,14 @@ abstract class Module<T extends SimplePage> extends _StatelessWidget with StoreC
 
     @override
     Widget onBuild(BuildContext context) {
-        assert(false, 'Module[$runtimeType] can not be mounted to widget tree, use MountedModule instead.');
+        final p = context.findAncestorWidgetOfExactType<_CollectorInheritedWidget>();
+        assert(p != null);
+        return _ModuleInnerWidget(p.collector, Store._of(context, false), this);
+    }
+
+    @protected
+    Widget build(BuildContext context) {
+        assert(defaultPage != null, 'Module[$runtimeType] is mounted to widget tree, but both build() and defaultPage are returned null.');
         return null;
     }
 
@@ -29,25 +36,7 @@ abstract class Module<T extends SimplePage> extends _StatelessWidget with StoreC
         return node as ModuleState;
     }
 
-    Store _createStore() => _ModuleStore<T>(defaultPage, singleActive ? 1 : 2, false).connect(createStore());
-}
-
-abstract class MountedModule<T extends SimplePage> extends Module<T> {
-    @override
-    T get defaultPage => null;
-
-    @override
-    Widget onBuild(BuildContext context) {
-        final p = context.findAncestorWidgetOfExactType<_CollectorInheritedWidget>();
-        assert(p != null);
-        return _ModuleInnerWidget(p.collector, Store._of(context, false), this);
-    }
-
-    @protected
-    Widget build(BuildContext context);
-
-    @override
-    Store _createStore() => _ModuleStore<T>(defaultPage, 1, true).connect(createStore());
+    Store _createStore(bool mounted) => _ModuleStore<T>(defaultPage, singleActive ? 1 : 2, mounted).connect(createStore());
 }
 
 abstract class ModuleState {
@@ -84,7 +73,7 @@ class _ModuleNode extends ModuleState with _PageCollector {
     List<SimplePage> _shownPages = [];
     Map<SimplePage, dynamic> _shownWidgets = {};
 
-    _ModuleNode(this._module, this.__notifier, Store parent): _store = _module._createStore() {
+    _ModuleNode(this._module, this.__notifier, Store parent, bool mounted): _store = _module._createStore(mounted) {
         _store._parent = parent;
     }
 
@@ -167,8 +156,8 @@ class _ModuleNode extends ModuleState with _PageCollector {
     }
 
     _ModuleNode _createModulePage(Module widget) {
-        assert(widget.defaultPage != null);
-        final node = _ModuleNode(widget, _notifier, this._store);
+        assert(widget.defaultPage != null, 'Module[${widget.runtimeType}] is not mounted to widget tree, so the defaultPage must not be null.');
+        final node = _ModuleNode(widget, _notifier, this._store, false);
         node.init();
         return node;
     }
@@ -215,11 +204,17 @@ class _ModuleNode extends ModuleState with _PageCollector {
 
 class _MountedModuleNode extends _ModuleNode {
     VoidCallback _remover;
+    bool _noBuildOverride = false;
     final _PageCollector _parent;
 
     _MountedModuleNode(
         this._parent, Module module, _ChangeNotifier notifier, Store parent
-    ): super(module, notifier, parent);
+    ): super(module, notifier, parent, true);
+
+    set noBuildOverride(bool value) {
+        _noBuildOverride = value;
+        (_store._parent as _ModuleStore).silentSetDefaultPage();
+    }
 
     void init() {
         super.init();
@@ -232,15 +227,13 @@ class _MountedModuleNode extends _ModuleNode {
     }
 
     void _changePages(List<SimplePage> news, bool isInit) {
-        if (!isInit) _parent?._takePriority(this);
-        if (_module.singleActive) {
-            if (!isInit) {
-                _children.clear();
-                _notifier.notify();
-            }
-            return;
+        if (!isInit) {
+            _parent?._takePriority(this);
+
+            if (_module.singleActive) _children.clear();
         }
 
+        if (_noBuildOverride && news.isNotEmpty) news.removeAt(0);
         super._changePages(news, isInit);
     }
 }
@@ -269,7 +262,7 @@ class _RootPageCollector with _PageCollector {
 class _ModuleInnerWidget extends StatefulWidget {
     final _PageCollector _parentNode;
     final Store _parentStore;
-    final MountedModule _module;
+    final Module _module;
     _ModuleInnerWidget(this._parentNode, this._parentStore, this._module);
 
     @override
@@ -280,7 +273,7 @@ class __ModuleInnerWidgetState extends State<_ModuleInnerWidget> {
     _MountedModuleNode node;
     VoidCallback remover;
     SimplePage current;
-    final key = _StateKey<PageState>(PageState, null);
+
 
     @override
     void initState() {
@@ -288,11 +281,15 @@ class __ModuleInnerWidgetState extends State<_ModuleInnerWidget> {
         node = _MountedModuleNode(widget._parentNode, widget._module, widget._parentNode._notifier, widget._parentStore);
         node.init();
 
+        current = widget._module.defaultPage;
         if (widget._module.singleActive) {
-            remover = node._store._parent._listen((_) {
-                setState(() {
-                    current = node._store._parent._get(key).current;
-                });
+            final store = node._store._parent;
+
+            remover = store._listen((_) {
+                final c = store._get(_pageStateKey)._stack[0];
+                if (c != current) {
+                    setState(() { current = c; });
+                }
             });
         }
     }
@@ -306,11 +303,14 @@ class __ModuleInnerWidgetState extends State<_ModuleInnerWidget> {
 
     @override
     Widget build(BuildContext context) {
-        if (!widget._module.singleActive || current == null) {
-            return node._wrap(Builder(builder: (ctx) => widget._module.build(ctx)));
-        }
-
-        return node._wrap(widget._module.buildPage(node, current));
+        return node._wrap(Builder(builder: (ctx) {
+            final child = widget._module.build(ctx);
+            if (child == null) {
+                node.noBuildOverride = true;
+                return widget._module.buildPage(node, current);
+            }
+            return child;
+        }));
     }
 }
 
@@ -325,11 +325,13 @@ class _NavigateResult {
     _NavigateResult(this._future);
 }
 
+final _pageStateKey = _StateKey<PageState>(PageState, null);
+
 class _ModuleStore<T extends SimplePage> extends Store<_NavigateAction> {
-    final dynamic _intialPage;
+    final dynamic _initialPage;
     final int _maxStackSize;
     final bool _allowEmpty;
-    _ModuleStore(this._intialPage, this._maxStackSize, this._allowEmpty);
+    _ModuleStore(this._initialPage, this._maxStackSize, this._allowEmpty);
 
     @override
     Future handle(StoreSetter set, StoreGetter get, _NavigateAction action) => action._when(
@@ -383,12 +385,21 @@ class _ModuleStore<T extends SimplePage> extends Store<_NavigateAction> {
         }
     );
 
+    void silentSetDefaultPage() {
+        final c = _get(_pageStateKey);
+        if (c._stack.isEmpty) {
+            _set(false, _pageStateKey, PageState._create(c._completer, [_initialPage]));
+        }
+    }
+
     @override
     void init(StoreInitializer init) {
-        if (_intialPage == null) {
+        if (_allowEmpty) {
             init.state(PageState._create(null, []));
-        } else {
-            init.state(PageState._new(_intialPage));
+            return;
         }
+
+        assert(_initialPage != null, 'defaultPage in unmounted module must not be null.');
+        init.state(PageState._new(_initialPage));
     }
 }
