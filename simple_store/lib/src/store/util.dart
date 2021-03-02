@@ -64,7 +64,7 @@ class ReadOnlyStore extends StateOnlyStore {
     @override
     @mustCallSuper
     void init(StoreInitializer init) {
-        initializer(ReferenceCreator._(init));
+        if (initializer != null) initializer(ReferenceCreator._(init));
     }
 }
 
