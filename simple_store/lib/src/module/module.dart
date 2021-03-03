@@ -66,15 +66,15 @@ abstract class PageState extends SimpleState with _$PageState {
 
 class _ModuleNode extends ModuleState with _PageCollector {
     final Module _module;
-    final _ChangeNotifier __notifier;
     final Store _store;
 
     VoidCallback _listenerRemover;
     List<SimplePage> _shownPages = [];
     Map<SimplePage, dynamic> _shownWidgets = {};
 
-    _ModuleNode(this._module, this.__notifier, Store parent, bool mounted): _store = _module._createStore(mounted) {
+    _ModuleNode(_PageCollector collector, this._module, Store parent, bool mounted): _store = _module._createStore(mounted) {
         _store._parent = parent;
+        _parent = collector;
     }
 
     void init() {
@@ -121,7 +121,10 @@ class _ModuleNode extends ModuleState with _PageCollector {
         }
         _shownPages = news;
 
-        if (!isInit) _notifier.notify();
+        if (!isInit) {
+            _takePriority();
+            _notify();
+        }
     }
 
     void _createPages(List<SimplePage> pages) {
@@ -157,7 +160,7 @@ class _ModuleNode extends ModuleState with _PageCollector {
 
     _ModuleNode _createModulePage(Module widget) {
         assert(widget.defaultPage != null, 'Module[${widget.runtimeType}] is not mounted to widget tree, so the defaultPage must not be null.');
-        final node = _ModuleNode(widget, _notifier, this._store, false);
+        final node = _ModuleNode(this, widget, this._store, false);
         node.init();
         return node;
     }
@@ -188,51 +191,30 @@ class _ModuleNode extends ModuleState with _PageCollector {
         _shownPages.forEach((e) {
             final w = _shownWidgets[e];
             assert(w != null);
-            if (w is _ModuleNode) {
-                re.addAll(w.pages());
-            } else {
+            if (w is! _ModuleNode) {
                 re.add(w);
+            } else if (w != _child) {
+                re.addAll(w.pages());
             }
         });
-        re.addAll(_childrenPages());
+        re.addAll(_childPages());
         return re;
     }
-
-    @override
-    _ChangeNotifier get _notifier => __notifier;
 }
 
 class _MountedModuleNode extends _ModuleNode {
-    VoidCallback _remover;
     bool _noBuildOverride = false;
-    final _PageCollector _parent;
 
     _MountedModuleNode(
-        this._parent, Module module, _ChangeNotifier notifier, Store parent
-    ): super(module, notifier, parent, true);
+        _PageCollector collector, Module module, Store parent
+    ): super(collector, module, parent, true);
 
     set noBuildOverride(bool value) {
         _noBuildOverride = value;
         (_store._parent as _ModuleStore).silentSetDefaultPage();
     }
 
-    void init() {
-        super.init();
-        _remover = _parent?._addChild(this);
-    }
-
-    Future<void> dispose() {
-        if (_remover != null) _remover();
-        return super.dispose();
-    }
-
     void _changePages(List<SimplePage> news, bool isInit) {
-        if (!isInit) {
-            _parent?._takePriority(this);
-
-            if (_module.singleActive) _children.clear();
-        }
-
         if (_noBuildOverride && news.isNotEmpty) news.removeAt(0);
         super._changePages(news, isInit);
     }
@@ -240,17 +222,13 @@ class _MountedModuleNode extends _ModuleNode {
 
 class _RootPageCollector with _PageCollector {
     final Widget child;
-    final _ChangeNotifier __notifier;
-    _RootPageCollector(this.child, this.__notifier);
-
-    @override
-    _ChangeNotifier get _notifier => __notifier;
+    _RootPageCollector(this.child);
 
     @override
     List<Page> pages() {
         return [
             _createRootPage(),
-            ..._childrenPages()
+            ..._childPages()
         ];
     }
 
@@ -278,7 +256,7 @@ class __ModuleInnerWidgetState extends State<_ModuleInnerWidget> {
     @override
     void initState() {
         super.initState();
-        node = _MountedModuleNode(widget._parentNode, widget._module, widget._parentNode._notifier, widget._parentStore);
+        node = _MountedModuleNode(widget._parentNode, widget._module, widget._parentStore);
         node.init();
 
         current = widget._module.defaultPage;
@@ -286,8 +264,9 @@ class __ModuleInnerWidgetState extends State<_ModuleInnerWidget> {
             final store = node._store._parent;
 
             remover = store._listen((_) {
-                final c = store._get(_pageStateKey)._stack[0];
-                if (c != current) {
+                final state = store._get(_pageStateKey);
+                final c = state._stack.isEmpty ? null : state._stack[0];
+                if (c != null && c != current) {
                     setState(() { current = c; });
                 }
             });
@@ -309,6 +288,12 @@ class __ModuleInnerWidgetState extends State<_ModuleInnerWidget> {
                 node.noBuildOverride = true;
                 return widget._module.buildPage(node, current);
             }
+
+            if (remover != null) {
+                remover();
+                remover = null;
+            }
+
             return child;
         }));
     }

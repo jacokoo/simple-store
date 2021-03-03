@@ -20,17 +20,16 @@ class _SimpleStoreAppState extends State<SimpleStoreApp> {
     @override
     void initState() {
         super.initState();
-        delegate = _RouterDelegate();
-        parser = _RouteInfoParser();
         if (widget.home is Module) {
-            final node = _ModuleNode(widget.home, delegate, null, false);
+            final node = _ModuleNode(null, widget.home, null, false);
             node.init();
             collector = node;
         } else {
-            collector = _RootPageCollector(widget.home, delegate);
+            collector = _RootPageCollector(widget.home);
         }
 
-        delegate.collector = collector;
+        parser = _RouteInfoParser();
+        delegate = _RouterDelegate(collector);
     }
 
     @override
@@ -68,32 +67,27 @@ class _PageLocalKeyValue {
 }
 
 mixin _PageCollector {
-    _PageCollector __parentCollector;
-    final List<_PageCollector> _children = [];
+    _PageCollector _parent;
+    _PageCollector _child;
+    _ChangeNotifier __notifier;
 
-    VoidCallback _addChild(_PageCollector node) {
-        node.__parentCollector = this;
-        _children.add(node);
-        return () {
-            node.__parentCollector = null;
-            _children.remove(node);
-        };
+    void _takePriority() {
+        _parent?._takePriority();
+        _parent?._child = this;
+        this._child = null;
     }
 
-    void _takePriority(_PageCollector node) {
-        __parentCollector?._takePriority(this);
-        assert(_children.contains(node));
-        if (_children.last == node) return;
-        _children..remove(node)..add(node);
+    List<Page> _childPages() {
+        return _child?.pages() ?? [];
     }
 
-    List<Page> _childrenPages() {
-        if (_children.isEmpty) return [];
-        return _children.last.pages();
+    void _notify() {
+        if (_parent != null) return _parent._notify();
+        assert(__notifier != null);
+        __notifier.notify();
     }
 
     List<Page> pages();
-    _ChangeNotifier get _notifier;
 }
 
 class _CollectorInheritedWidget extends InheritedWidget {
@@ -111,7 +105,10 @@ class _RouterDelegate extends RouterDelegate
     with ChangeNotifier, PopNavigatorRouterDelegateMixin
     implements _ChangeNotifier {
 
-    _PageCollector collector;
+    final _PageCollector collector;
+    _RouterDelegate(this.collector) {
+        collector.__notifier = this;
+    }
 
     @override
     Widget build(BuildContext context) {
@@ -146,10 +143,9 @@ class _RouterDelegate extends RouterDelegate
         if (key is! ValueKey) return;
         final value = (key as ValueKey).value;
 
-        if (value is! _PageLocalKeyValue) return;
-        final vv = value as _PageLocalKeyValue;
-
-        vv.state.pop(result);
+        if (value is _PageLocalKeyValue) {
+            value.state.pop(result);
+        }
     }
 }
 
