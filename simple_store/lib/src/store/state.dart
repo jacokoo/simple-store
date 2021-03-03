@@ -41,7 +41,7 @@ mixin _StateHolder on _Listenable<Set<_StateKey>> {
     }
 
     bool _set<T extends SimpleState>(bool isInit, _StateKey key, T t) {
-        if (!isInit && !__state.containsKey(key)) {
+        if (!isInit && !_mayHaveState(key)) {
             throw UnknownStateException(t, runtimeType);
         }
         if (__state[key] != t) {
@@ -55,8 +55,14 @@ mixin _StateHolder on _Listenable<Set<_StateKey>> {
         __initializers[T] = initializer;
     }
 
-    bool _haveState(_StateKey key) =>
+    bool _mayHaveState(_StateKey key) =>
         __state.containsKey(key) || __initializers.containsKey(key.type);
+
+    bool _haveState(_StateKey key) {
+        if (__state.containsKey(key)) return true;
+        if (key.name == null && __initializers.containsKey(key.type)) return true;
+        return false;
+    }
 
     void _disposeState() {
         __state = {};
@@ -78,8 +84,8 @@ class StoreSetter {
         }
     }
 
-    StoreSetter _sub(_StateReference store, {bool isInit}) {
-        return StoreSetter.__forSub(isInit == null ? _isInit : isInit, _init, _changed, store, this);
+    StoreSetter _sub(_StateReference store) {
+        return StoreSetter.__forSub(_isInit, _init, _changed, store, this);
     }
 
     void call<T extends SimpleState>(T t, {dynamic name}) {

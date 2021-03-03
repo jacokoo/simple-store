@@ -5,12 +5,18 @@ typedef ReferenceTransformer<T extends SimpleState> = void Function(T state, Ref
 
 class ReferenceSetter {
     final StoreSetter _setter;
-    ReferenceSetter._(this._setter);
+    final _StateKey _refKey;
+    ReferenceSetter._(this._setter, this._refKey);
 
     bool get isInit => _setter._isInit;
 
     void call<T extends SimpleState>(T t, {dynamic name}) {
-        _setter.call<T>(t, name: name);
+        final key = _StateKey<T>(T, name);
+
+        if (key != _refKey && !_setter._store._mayHaveState(key)) {
+            throw UnknownStateException(t, _setter._store.runtimeType);
+        }
+        _setter._key(key, t);
     }
 }
 
@@ -56,14 +62,12 @@ mixin _StateReference on _StateHolder {
     }
 
     void _updateState<T extends SimpleState>(_StateKey<T> key, SimpleState v, StoreSetter set) {
-        if (set._isInit || !__refSetters.containsKey(key)) {
-            final sub = set._sub(this);
-            sub._key(key, v);
-        }
-
+        final sub = set._sub(this);
         if (__refSetters.containsKey(key)) {
-            final setter = ReferenceSetter._(set._sub(this, isInit: false));
+            final setter = ReferenceSetter._(sub, key);
             __refSetters[key](v, setter);
+        } else {
+            sub._key(key, v);
         }
     }
 

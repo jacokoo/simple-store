@@ -35,7 +35,7 @@ class StoreInitializer with _Initializer {
             final key = _StateKey<T>(T, name);
             var p = _owner._parent;
             while (p != null) {
-                if (p._haveState(key)) {
+                if (p._mayHaveState(key)) {
                     _owner._dependTo(p, key, setter, _setter);
                     return;
                 }
@@ -64,7 +64,7 @@ class StoreInitializer with _Initializer {
         });
     }
 
-    void listen<T extends SimpleState>({dynamic name, void Function(T) listener}) {
+    void listen<T extends SimpleState>({dynamic name, _Listener<T> listener}) {
         _do(() {
             final key = _StateKey<T>(T, name);
             var p = _owner._parent;

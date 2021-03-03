@@ -107,6 +107,14 @@ mixin _Listenable<T> {
     final _listeners = LinkedList<_Entry>();
 
     VoidCallback _listen(_Listener<T> fn) {
+        return _listen2(fn);
+    }
+
+    // maybe because the _Listenable is used in Map
+    // if use _Listener<T> here, will cause
+    // type '(SomeType) => Null' is not a subtype of type '(dynamic) => void'
+    // so use listen2 for map
+    VoidCallback _listen2(dynamic fn) {
         final entry = _Entry(fn);
         _listeners.add(entry);
         return () {

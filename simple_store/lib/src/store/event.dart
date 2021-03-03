@@ -13,7 +13,7 @@ mixin _EventHolder {
     void _listenTo<T extends SimpleState>(_EventHolder owner, _StateKey<T> key, _Listener<T> listener) {
         final emitter = owner.__emitters[key];
         assert(emitter != null);
-        __listenerRemovers.add(emitter._listen(listener));
+        __listenerRemovers.add(emitter._listen2(listener));
     }
 
     void _disposeEvent() {

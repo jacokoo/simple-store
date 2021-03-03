@@ -68,16 +68,20 @@ class _PageLocalKeyValue {
 }
 
 mixin _PageCollector {
+    _PageCollector __parentCollector;
     final List<_PageCollector> _children = [];
 
     VoidCallback _addChild(_PageCollector node) {
+        node.__parentCollector = this;
         _children.add(node);
         return () {
+            node.__parentCollector = null;
             _children.remove(node);
         };
     }
 
     void _takePriority(_PageCollector node) {
+        __parentCollector?._takePriority(this);
         assert(_children.contains(node));
         if (_children.last == node) return;
         _children..remove(node)..add(node);
