@@ -36,7 +36,7 @@ abstract class Module<T extends SimplePage> extends _StatelessWidget with StoreC
         return node as ModuleState;
     }
 
-    Store _createStore(bool mounted) => _ModuleStore<T>(defaultPage, singleActive ? 1 : 2, mounted).connect(createStore());
+    _ModuleStore _createModuleStore(bool mounted) => _ModuleStore<T>(defaultPage, singleActive ? 1 : 2, mounted);
 }
 
 abstract class ModuleState {
@@ -66,20 +66,23 @@ abstract class PageState extends SimpleState with _$PageState {
 
 class _ModuleNode extends ModuleState with _PageCollector {
     final Module _module;
-    final Store _store;
+    Store _store;
+    _ModuleStore _moduleStore;
 
     VoidCallback _listenerRemover;
     List<SimplePage> _shownPages = [];
     Map<SimplePage, dynamic> _shownWidgets = {};
 
-    _ModuleNode(_PageCollector collector, this._module, Store parent, bool mounted): _store = _module._createStore(mounted) {
+    _ModuleNode(_PageCollector collector, this._module, Store parent, bool mounted) {
+        _moduleStore = _module._createModuleStore(mounted);
+        _store = _moduleStore.connect(_module.createStore());
         _store._parent = parent;
         _parent = collector;
     }
 
     void init() {
         _store._init();
-        _listenerRemover = _store._parent._listen((_) {
+        _listenerRemover = _moduleStore._listen((_) {
             _changePages(_currentPages(), false);
         });
         _changePages(_currentPages(), true);
@@ -99,7 +102,7 @@ class _ModuleNode extends ModuleState with _PageCollector {
     }
 
     List<SimplePage> _currentPages() {
-        final state = _store._parent._get(_StateKey<PageState>(PageState, null));
+        final state = _moduleStore._get(_StateKey<PageState>(PageState, null));
         return List.from(state._stack);
     }
 
@@ -174,7 +177,7 @@ class _ModuleNode extends ModuleState with _PageCollector {
 
     @override
     Future<dynamic> navTo(SimplePage page) {
-        return _store._parent.dispatch(null, _NavigateAction.navTo(page)).then((value) {
+        return _moduleStore.dispatch(null, _NavigateAction.navTo(page)).then((value) {
             if (value == null) return null;
             return (value as _NavigateResult)._future;
         });
@@ -182,7 +185,7 @@ class _ModuleNode extends ModuleState with _PageCollector {
 
     @override
     void pop([dynamic result]) {
-        _store._parent.dispatch(null, _NavigateAction.pop(result));
+        _moduleStore.dispatch(null, _NavigateAction.pop(result));
     }
 
     @override
@@ -211,7 +214,7 @@ class _MountedModuleNode extends _ModuleNode {
 
     set noBuildOverride(bool value) {
         _noBuildOverride = value;
-        (_store._parent as _ModuleStore).silentSetDefaultPage();
+        _moduleStore.silentSetDefaultPage();
     }
 
     void _changePages(List<SimplePage> news, bool isInit) {
@@ -261,7 +264,7 @@ class __ModuleInnerWidgetState extends State<_ModuleInnerWidget> {
 
         current = widget._module.defaultPage;
         if (widget._module.singleActive) {
-            final store = node._store._parent;
+            final store = node._moduleStore;
 
             remover = store._listen((_) {
                 final state = store._get(_pageStateKey);

@@ -55,6 +55,10 @@ class ReferenceCreator {
     void ref<T extends SimpleState>({dynamic name, ReferenceTransformer<T> setter}) {
         _init.ref<T>(name: name, setter: setter);
     }
+
+    void listen<T extends SimpleState>({dynamic name, void Function(T) listener}) {
+        _init.listen<T>(name: name, listener: listener);
+    }
 }
 
 class ReadOnlyStore extends StateOnlyStore {

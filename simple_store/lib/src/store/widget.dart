@@ -18,7 +18,7 @@ abstract class Component extends _StatelessWidget with StoreCreator {
     }
 }
 
-abstract class ValueComponent<T> extends StatelessWidget with StoreCreator {
+abstract class ValueComponent<T> extends _StatelessWidget with StoreCreator {
     final T _initialValue;
     final _StoreAware _aware = _StoreAware();
     ValueComponent({T intialValue, Key key}): _initialValue = intialValue, super(key: key);
@@ -33,11 +33,11 @@ abstract class ValueComponent<T> extends StatelessWidget with StoreCreator {
 
     @override
     @nonVirtual
-    Widget build(BuildContext context) {
-        return _StoreWidget(Store._of(context, false), this, doBuild, _aware);
+    Widget onBuild(BuildContext context) {
+        return _StoreWidget(Store._of(context, false), this, build, _aware);
     }
 
-    Widget doBuild(BuildContext context);
+    Widget build(BuildContext context);
 
     Widget watch({Widget Function(T) builder}) {
         return Watch<_ValueState>(builder: (vs) => builder(vs.value));

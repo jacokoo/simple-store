@@ -21,8 +21,12 @@ abstract class Store<T extends SimpleAction> with _Listenable<Set<_StateKey>>, _
     Store __connectedStore;
 
     Store connect(Store child) {
-        child.__parent = this;
-        child.__connectedStore = this;
+        Store c = child;
+        while (c.__connectedStore != null) {
+            c = c.__connectedStore;
+        }
+        c.__parent = this;
+        c.__connectedStore = this;
         return child;
     }
 
