@@ -66,7 +66,7 @@ Future<String> createConstructorClass(ConstructorInfo info, String parent, bool 
 
     final t = haveGeneric ? (info.redirect.generics.first == 'void' ? '' : '<T>') : '';
     final tss = info.params.map((e) => '${e.name}: \$${e.name}').join(', ');
-    final name = haveName ? '\n@override\nString get name => \'${info.name}\';\n' : '';
+    final name = haveName ? '\n@override\nString get generatedPageName => \'${info.name}\';\n' : '';
     return '''
     class ${info.redirect.name}$t extends $parent {
         ${fields.join('\n')}

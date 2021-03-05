@@ -17,7 +17,8 @@ abstract class SimpleState {}
 abstract class SimplePage {
     const SimplePage();
 
-    String get name;
+    // use a long name to avoid field name conflict
+    String get generatedPageName;
 }
 
 /// This is an interal object used in _copy.
