@@ -22,7 +22,7 @@ class _Home extends HomePages {
   const _Home() : super._();
 
   @override
-  String get name => 'home';
+  String get generatedPageName => 'home';
 
   @override
   String toString() {
@@ -35,7 +35,7 @@ class _Todo extends HomePages {
   const _Todo(this.todos) : super._();
 
   @override
-  String get name => 'todo';
+  String get generatedPageName => 'todo';
 
   @override
   String toString() {
@@ -47,7 +47,7 @@ class _Inside extends HomePages {
   const _Inside() : super._();
 
   @override
-  String get name => 'inside';
+  String get generatedPageName => 'inside';
 
   @override
   String toString() {

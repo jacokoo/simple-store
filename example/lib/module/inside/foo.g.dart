@@ -20,7 +20,7 @@ class _Foo extends FooPages {
   const _Foo() : super._();
 
   @override
-  String get name => 'foo';
+  String get generatedPageName => 'foo';
 
   @override
   String toString() {
@@ -32,7 +32,7 @@ class _Foo2 extends FooPages {
   const _Foo2() : super._();
 
   @override
-  String get name => 'foo2';
+  String get generatedPageName => 'foo2';
 
   @override
   String toString() {

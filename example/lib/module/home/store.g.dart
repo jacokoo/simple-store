@@ -52,4 +52,12 @@ class _TodoStorageState extends TodoStorageState {
   String toString() {
     return 'TodoStorageState(todos: $todos)';
   }
+
+  @override
+  bool operator ==(dynamic o) {
+    return identical(o, this) || (o is _TodoStorageState && todos == o.todos);
+  }
+
+  @override
+  int get hashCode => hashValues(runtimeType, todos);
 }

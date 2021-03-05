@@ -22,7 +22,7 @@ class _Bar extends BarPages {
   const _Bar() : super._();
 
   @override
-  String get name => 'bar';
+  String get generatedPageName => 'bar';
 
   @override
   String toString() {
@@ -34,7 +34,7 @@ class _Bar2 extends BarPages {
   const _Bar2() : super._();
 
   @override
-  String get name => 'bar2';
+  String get generatedPageName => 'bar2';
 
   @override
   String toString() {
@@ -46,7 +46,7 @@ class _Todo extends BarPages {
   const _Todo() : super._();
 
   @override
-  String get name => 'todo';
+  String get generatedPageName => 'todo';
 
   @override
   String toString() {

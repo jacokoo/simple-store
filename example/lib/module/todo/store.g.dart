@@ -148,6 +148,15 @@ class _TodoState extends TodoState {
   String toString() {
     return 'TodoState(filter: $filter, todos: $todos)';
   }
+
+  @override
+  bool operator ==(dynamic o) {
+    return identical(o, this) ||
+        (o is _TodoState && filter == o.filter && todos == o.todos);
+  }
+
+  @override
+  int get hashCode => hashValues(runtimeType, filter, todos);
 }
 
 // **************************************************************************
@@ -189,4 +198,16 @@ class _Todo extends Todo {
   String toString() {
     return 'Todo(id: $id, name: $name, completed: $completed)';
   }
+
+  @override
+  bool operator ==(dynamic o) {
+    return identical(o, this) ||
+        (o is _Todo &&
+            id == o.id &&
+            name == o.name &&
+            completed == o.completed);
+  }
+
+  @override
+  int get hashCode => hashValues(runtimeType, id, name, completed);
 }

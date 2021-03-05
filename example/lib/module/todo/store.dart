@@ -45,6 +45,8 @@ var id = 0;
 class TodoStore extends Store<TodoAction> {
     @override
     void init(StoreInitializer init) {
+        init.state(TodoState._create(FilterType.All, BuiltList.from([])));
+
         init.ref<TodoStorageState>(setter: (hs, set) {
             set(TodoState._create(FilterType.All, hs.todos));
         });

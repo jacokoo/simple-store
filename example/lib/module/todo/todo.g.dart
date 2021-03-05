@@ -22,7 +22,7 @@ class _ListPage extends TodoPages {
   const _ListPage() : super._();
 
   @override
-  String get name => 'list';
+  String get generatedPageName => 'list';
 
   @override
   String toString() {
@@ -34,7 +34,7 @@ class _AddPage extends TodoPages {
   const _AddPage() : super._();
 
   @override
-  String get name => 'add';
+  String get generatedPageName => 'add';
 
   @override
   String toString() {
@@ -47,7 +47,7 @@ class _EditPage extends TodoPages {
   const _EditPage(this.todo) : super._();
 
   @override
-  String get name => 'edit';
+  String get generatedPageName => 'edit';
 
   @override
   String toString() {
