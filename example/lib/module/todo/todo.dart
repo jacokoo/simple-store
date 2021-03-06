@@ -20,7 +20,7 @@ class TodoModule extends Module<TodoPages> {
     TodoPages get defaultPage => TodoPages.list();
 
     @override
-    Widget buildPage(ModuleState _, TodoPages pages) => pages._when(
+    Widget buildPage(TodoPages pages) => pages._when(
         list: (_) => TodoListPage(),
         add: (_) => TodoEditor(),
         edit: (s) => TodoEditor(todo: s.todo)

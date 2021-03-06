@@ -1,7 +1,7 @@
 import 'package:built_collection/built_collection.dart';
 import 'package:example/module/home/app_list.dart';
 import 'package:example/module/home/store.dart';
-import 'package:example/module/inside/inside.dart';
+import 'package:example/module/mounted/mounted.dart';
 import 'package:example/module/todo/store.dart';
 import 'package:example/module/todo/todo.dart';
 import 'package:flutter/material.dart';
@@ -22,10 +22,10 @@ class HomeModule extends Module<HomePages> {
     HomePages get defaultPage => HomePages.home();
 
     @override
-    Widget buildPage(ModuleState _, HomePages pages) => pages._when(
+    Widget buildPage(HomePages pages) => pages._when(
         home: (_) => AppListWidget(),
         todo: (p) => TodoModule(),
-        inside: (_) => InsideWidget()
+        inside: (_) => MountedWidget()
     );
 
     @override

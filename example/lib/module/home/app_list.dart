@@ -23,7 +23,7 @@ class AppListWidget extends StatelessWidget {
             )),
             Divider(height: 1, indent: 14),
             ListTile(
-                title: Text('Inside demo'),
+                title: Text('Mounted Module'),
                 onTap: () {
                     context.navTo(HomePages.inside());
                 },
