@@ -64,7 +64,7 @@ abstract class Store<T extends SimpleAction> with _Listenable<Set<_StateKey>>, _
     Future<dynamic> handle(StoreSetter set, StoreGetter get, T action);
 
     @protected
-    void dispose() {}
+    void dispose(StoreGetter get) {}
 
     @protected
     void onError(SimpleAction action, dynamic e, dynamic stack) {
@@ -105,18 +105,27 @@ abstract class Store<T extends SimpleAction> with _Listenable<Set<_StateKey>>, _
 
     // Call this method before dispatch disposeActions
     // This is to release the listeners of current store.
-    void _willCallDispose() {
-        __connectedStore?._willCallDispose();
+    void __willDispose() {
+        __connectedStore?.__willDispose();
         _clearListeners();
         _disposeReference();
         _disposeEvent();
     }
 
-    void _dispose() {
-        __connectedStore?._dispose();
-        this._willCallDispose();
+    void __didDispose() {
+        final getter = StoreGetter._(this);
+        try {
+            dispose(getter);
+        } finally {
+            getter._end();
+        }
         _disposeState();
-        dispose();
+        __connectedStore?.__didDispose();
+    }
+
+    void _dispose() {
+        this.__willDispose();
+        this.__didDispose();
     }
 
     void _init() {

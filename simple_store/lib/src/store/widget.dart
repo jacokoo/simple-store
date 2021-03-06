@@ -2,8 +2,6 @@ part of '../store.dart';
 
 mixin StoreCreator {
     Store createStore();
-    List<SimpleAction> get initActions => [];
-    List<SimpleAction> get disposeActions => [];
 }
 
 abstract class Component extends _StatelessWidget with StoreCreator {
@@ -108,14 +106,6 @@ class _StoreInheritedWidget extends InheritedWidget {
     }
 }
 
-Future<void> _postDispatchAction(Store store, List<SimpleAction> actions) {
-    final c = Completer();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-        Future.wait(actions.map((e) => store.dispatch(null, e))).whenComplete(() => c.complete());
-    });
-    return c.future;
-}
-
 class _StoreAware {
     Store _store;
 
@@ -142,7 +132,6 @@ class __StoreWidgetState extends State<_StoreWidget> {
     void initState() {
         super.initState();
 
-
         store = widget.creator.createStore();
         store._parent = widget.parent;
         store._init();
@@ -153,8 +142,6 @@ class __StoreWidgetState extends State<_StoreWidget> {
             print('store: ${store.runtimeType} inited');
             return true;
         }());
-
-        _postDispatchAction(store, widget.creator.initActions);
     }
 
     @override
@@ -169,8 +156,7 @@ class __StoreWidgetState extends State<_StoreWidget> {
             return true;
         }());
         widget.aware?._store = null;
-        store._willCallDispose();
-        _postDispatchAction(store, widget.creator.disposeActions).whenComplete(() => store._dispose());
+        store._dispose();
         super.dispose();
     }
 }
@@ -178,10 +164,8 @@ class __StoreWidgetState extends State<_StoreWidget> {
 class _InnerStoreWidget extends StatefulWidget {
     final Store store;
     final Widget Function(List<dynamic>) builder;
-    final List<SimpleAction> initActions;
-    final List<SimpleAction> disposeActions;
     final List<_StateKey> watchedKeys;
-    _InnerStoreWidget(this.store, this.builder, this.initActions, this.disposeActions, this.watchedKeys);
+    _InnerStoreWidget(this.store, this.builder, this.watchedKeys);
 
     @override
     State<StatefulWidget> createState() => __InnerStoreWidgetState();
@@ -195,7 +179,6 @@ class __InnerStoreWidgetState extends State<_InnerStoreWidget> {
     @override
     void initState() {
         super.initState();
-        _postDispatchAction(widget.store, widget.initActions);
 
         if (widget.watchedKeys.isNotEmpty) {
             remover = widget.store._listen((data) {
@@ -209,7 +192,6 @@ class __InnerStoreWidgetState extends State<_InnerStoreWidget> {
     @override
     void dispose() {
         if (remover != null) remover();
-        _postDispatchAction(widget.store, widget.disposeActions);
         super.dispose();
     }
 
@@ -228,7 +210,7 @@ class _Watch extends StatelessWidget {
 
     @override
     Widget build(BuildContext context) {
-        return _InnerStoreWidget(Store._of(context, true), builder, [], [], watchedKeys);
+        return _InnerStoreWidget(Store._of(context, true), builder, watchedKeys);
     }
 }
 

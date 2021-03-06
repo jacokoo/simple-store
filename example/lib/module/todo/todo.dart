@@ -28,6 +28,4 @@ class TodoModule extends Module<TodoPages> {
 
     @override
     Store createStore() => TodoStore();
-
-    List<SimpleAction> get disposeActions => [TodoAction.storeTodos()];
 }

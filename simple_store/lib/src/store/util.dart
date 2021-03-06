@@ -61,14 +61,19 @@ class ReferenceCreator {
     }
 }
 
+typedef Dispatcher = Future<dynamic> Function(SimpleAction);
+
 class ReadOnlyStore extends StateOnlyStore {
-    final void Function(ReferenceCreator) initializer;
+    final void Function(ReferenceCreator, Dispatcher) initializer;
     ReadOnlyStore([this.initializer]);
 
     @override
     @mustCallSuper
     void init(StoreInitializer init) {
-        if (initializer != null) initializer(ReferenceCreator._(init));
+        if (initializer != null) initializer(
+            ReferenceCreator._(init),
+            (action) => dispatch(null, action)
+        );
     }
 }
 

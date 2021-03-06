@@ -36,8 +36,6 @@ abstract class TodoAction extends SimpleAction with _$TodoAction {
     const factory TodoAction.toggleComplete(int id) = _ToggleComplete;
     const factory TodoAction.toggleAll() = _ToggleAll;
     const factory TodoAction.changeName(int id, String name) = _ChangeName;
-
-    const factory TodoAction.storeTodos() = _StoreTodos;
 }
 
 var id = 0;
@@ -50,6 +48,11 @@ class TodoStore extends Store<TodoAction> {
         init.ref<TodoStorageState>(setter: (hs, set) {
             set(TodoState._create(FilterType.All, hs.todos));
         });
+    }
+
+    @override
+    void dispose(StoreGetter get) async {
+        dispatch(null, HomeAction.storeTodos(get<TodoState>().todos));
     }
 
     @override
@@ -106,10 +109,6 @@ class TodoStore extends Store<TodoAction> {
                 list[idx] = todo.copy(name: p.name);
             });
             set(state._copy(todos: nl));
-        },
-
-        storeTodos: (_) async {
-            await dispatch(set, HomeAction.storeTodos(get<TodoState>().todos));
         }
     );
 

@@ -14,8 +14,7 @@ mixin _$TodoAction {
       @required Future<void> Function(_Filter) filter,
       @required Future<void> Function(_ToggleComplete) toggleComplete,
       @required Future<void> Function(_ToggleAll) toggleAll,
-      @required Future<void> Function(_ChangeName) changeName,
-      @required Future<void> Function(_StoreTodos) storeTodos}) {
+      @required Future<void> Function(_ChangeName) changeName}) {
     if (this is _Add) return add(this);
     if (this is _Del) return del(this);
     if (this is _ClearCompleted) return clearCompleted(this);
@@ -23,7 +22,6 @@ mixin _$TodoAction {
     if (this is _ToggleComplete) return toggleComplete(this);
     if (this is _ToggleAll) return toggleAll(this);
     if (this is _ChangeName) return changeName(this);
-    if (this is _StoreTodos) return storeTodos(this);
     return null;
   }
 }
@@ -94,15 +92,6 @@ class _ChangeName extends TodoAction {
   @override
   String toString() {
     return 'TodoAction.changeName(id: $id, name: $name)';
-  }
-}
-
-class _StoreTodos extends TodoAction {
-  const _StoreTodos() : super._();
-
-  @override
-  String toString() {
-    return 'TodoAction.storeTodos()';
   }
 }
 

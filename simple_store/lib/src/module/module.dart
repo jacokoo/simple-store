@@ -86,19 +86,13 @@ class _ModuleNode extends ModuleState with _PageCollector {
             _changePages(_currentPages(), false);
         });
         _changePages(_currentPages(), true);
-
-        if (_module.initActions.isNotEmpty) {
-            _postDispatchAction(_store, _module.initActions);
-        }
     }
 
     Future<void> dispose() async {
         _listenerRemover();
         _disposePages(_shownPages);
         _shownPages = [];
-        _store._willCallDispose();
-        await Future.wait(_module.disposeActions.map((e) => _store.dispatch(null, e)));
-        _store.dispose();
+        _store._dispose();
     }
 
     List<SimplePage> _currentPages() {
