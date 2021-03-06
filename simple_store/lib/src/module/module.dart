@@ -10,7 +10,7 @@ abstract class Module<T extends SimplePage> extends _StatelessWidget with StoreC
     bool get singleActive => false;
 
     /// Build page content for the specified page
-    Widget buildPage(ModuleState module, T page);
+    Widget buildPage(T page);
 
     /// Create `Page` object for navigation.
     Page createPage(Key key, Widget child) {
@@ -30,16 +30,16 @@ abstract class Module<T extends SimplePage> extends _StatelessWidget with StoreC
         return null;
     }
 
-    static ModuleState _of(BuildContext context) {
+    static _ModuleState _of(BuildContext context) {
         final node = context.findAncestorWidgetOfExactType<_CollectorInheritedWidget>()?.collector;
-        assert(node != null && node is ModuleState);
-        return node as ModuleState;
+        assert(node != null && node is _ModuleState);
+        return node as _ModuleState;
     }
 
     _ModuleStore _createModuleStore(bool mounted) => _ModuleStore<T>(defaultPage, singleActive ? 1 : 2, mounted);
 }
 
-abstract class ModuleState {
+abstract class _ModuleState {
     Future<dynamic> navTo(SimplePage page);
     void pop([dynamic result]);
 }
@@ -64,7 +64,7 @@ abstract class PageState extends SimpleState with _$PageState {
     }
 }
 
-class _ModuleNode extends ModuleState with _PageCollector {
+class _ModuleNode extends _ModuleState with _PageCollector {
     final Module _module;
     Store _store;
     _ModuleStore _moduleStore;
@@ -126,7 +126,7 @@ class _ModuleNode extends ModuleState with _PageCollector {
 
     void _createPages(List<SimplePage> pages) {
         pages.forEach((e) {
-            _shownWidgets[e] = _createPage(_module.buildPage(this, e), e);
+            _shownWidgets[e] = _createPage(_module.buildPage(e), e);
         });
     }
 
@@ -283,7 +283,7 @@ class __ModuleInnerWidgetState extends State<_ModuleInnerWidget> {
             final child = widget._module.build(ctx);
             if (child == null) {
                 node.noBuildOverride = true;
-                return widget._module.buildPage(node, current);
+                return widget._module.buildPage(current);
             }
 
             if (remover != null) {

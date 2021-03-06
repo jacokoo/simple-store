@@ -58,7 +58,7 @@ abstract class _ChangeNotifier {
 }
 
 class _PageLocalKeyValue {
-    final ModuleState state;
+    final _ModuleState state;
     final SimplePage page;
     _PageLocalKeyValue(this.state, this.page);
 
