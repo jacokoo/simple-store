@@ -4,6 +4,8 @@ import 'package:simple_store/simple_store.dart';
 
 void main() {
     runApp(SimpleStoreApp(
+        // MyApp is not required here, it can just be HomeModule
+        // MyApp is here to exemplify non-module Widget.
         home: MyApp(),
         builder: (delegate, parser) => MaterialApp.router(
             routeInformationParser: parser, routerDelegate: delegate

@@ -36,7 +36,7 @@ class TypedItem {
                 name = '${ast.beginToken.toString()}.$name';
             }
         } catch (ex) {
-            print('get ast for $e failed\n $ex');
+            print('get ast for $e failed');
         }
         return TypedItem(name, e.name);
     }

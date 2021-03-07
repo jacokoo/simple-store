@@ -22,7 +22,22 @@ mixin _$TodoAction {
     if (this is _ToggleComplete) return toggleComplete(this);
     if (this is _ToggleAll) return toggleAll(this);
     if (this is _ChangeName) return changeName(this);
+    assert(false, 'Unknown action instance: ActionGenerator');
     return null;
+  }
+
+  bool isType(bool add, bool del, bool clearCompleted, bool filter,
+      bool toggleComplete, bool toggleAll, bool changeName) {
+    if (add != null && add && this is _Add) return true;
+    if (del != null && del && this is _Del) return true;
+    if (clearCompleted != null && clearCompleted && this is _ClearCompleted)
+      return true;
+    if (filter != null && filter && this is _Filter) return true;
+    if (toggleComplete != null && toggleComplete && this is _ToggleComplete)
+      return true;
+    if (toggleAll != null && toggleAll && this is _ToggleAll) return true;
+    if (changeName != null && changeName && this is _ChangeName) return true;
+    return false;
   }
 }
 

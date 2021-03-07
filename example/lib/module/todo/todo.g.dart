@@ -14,7 +14,15 @@ mixin _$TodoPages {
     if (this is _ListPage) return list(this);
     if (this is _AddPage) return add(this);
     if (this is _EditPage) return edit(this);
+    assert(false, 'Unknown page instance: PageGenerator');
     return null;
+  }
+
+  bool isType(bool list, bool add, bool edit) {
+    if (list != null && list && this is _ListPage) return true;
+    if (add != null && add && this is _AddPage) return true;
+    if (edit != null && edit && this is _EditPage) return true;
+    return false;
   }
 }
 

@@ -19,15 +19,19 @@ class PageGenerator extends BaseGenerator<PageAnnotation> {
         });
         final cs = await Future.wait(css);
 
-        final fns = cs.map((e) => '@required Widget Function(${e.redirect.name}) ${e.name}').join(', ');
-        final sts = cs.map((e) => 'if (this is ${e.redirect.name}) return ${e.name}(this);').join('\n');
+        final fns = cs.map((e) => '@required Widget Function(${e.redirect.name}) ${noDash(e.name)}').join(', ');
+        final sts = cs.map((e) => 'if (this is ${e.redirect.name}) return ${noDash(e.name)}(this);').join('\n');
         final ccs = await Future.wait(cs.map((ee) => createConstructorClass(ee, e.name, false, true, step)));
+
         return ['''
         mixin _\$${e.name} {
             Widget _when({$fns}) {
                 $sts
+                assert(false, 'Unknown page instance: $this');
                 return null;
             }
+
+            ${generateIsType(cs)}
         }
         '''] + ccs;
     }

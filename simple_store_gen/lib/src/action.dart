@@ -37,15 +37,19 @@ class ActionGenerator extends BaseGenerator<ActionAnnotation> {
         });
         final cs = await Future.wait(css);
 
-        final fns = cs.map((e) => '@required Future<${e.redirect.generics.first}> Function(${e.redirect.name}) ${_noDash(e.name)}').join(', ');
-        final sts = cs.map((e) => 'if (this is ${e.redirect.name}) return ${_noDash(e.name)}(this);').join('\n');
+        final fns = cs.map((e) => '@required Future<${e.redirect.generics.first}> Function(${e.redirect.name}) ${noDash(e.name)}').join(', ');
+        final sts = cs.map((e) => 'if (this is ${e.redirect.name}) return ${noDash(e.name)}(this);').join('\n');
         final ccs = await Future.wait(cs.map((ee) => createConstructorClass(ee, e.name, true, false, step)));
+
         return ['''
         mixin _\$${e.name} {
             Future<dynamic> _when({$fns}) {
                 $sts
+                assert(false, 'Unknown action instance: $this');
                 return null;
             }
+
+            ${generateIsType(cs)}
         }
         '''] + ccs;
     }
@@ -118,7 +122,19 @@ Future<Redirect> getRedirectConstructor(ConstructorElement c, BuildStep step) as
     return Redirect(name, gs);
 }
 
-String _noDash(String input) {
+String generateIsType(List<ConstructorInfo> cs) {
+    final tns = cs.map((e) => 'bool ${noDash(e.name)}').join(',');
+    final tts = cs.map((e) => 'if (${noDash(e.name)} != null && ${noDash(e.name)} && this is ${e.redirect.name}) return true;').join('\n');
+
+    return '''
+        bool isType(${tns}) {
+            $tts
+            return false;
+        }
+    ''';
+}
+
+String noDash(String input) {
     var s = input;
     while (s.isNotEmpty && s[0] == '_') {
         s = s.substring(1);

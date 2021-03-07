@@ -14,7 +14,15 @@ mixin _$MountedByDefaultPagePages {
     if (this is _Page) return page(this);
     if (this is _Detail) return detail(this);
     if (this is _Todo) return todo(this);
+    assert(false, 'Unknown page instance: PageGenerator');
     return null;
+  }
+
+  bool isType(bool page, bool detail, bool todo) {
+    if (page != null && page && this is _Page) return true;
+    if (detail != null && detail && this is _Detail) return true;
+    if (todo != null && todo && this is _Todo) return true;
+    return false;
   }
 }
 

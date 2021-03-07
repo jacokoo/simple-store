@@ -14,7 +14,15 @@ mixin _$HomePages {
     if (this is _Home) return home(this);
     if (this is _Todo) return todo(this);
     if (this is _Inside) return inside(this);
+    assert(false, 'Unknown page instance: PageGenerator');
     return null;
+  }
+
+  bool isType(bool home, bool todo, bool inside) {
+    if (home != null && home && this is _Home) return true;
+    if (todo != null && todo && this is _Todo) return true;
+    if (inside != null && inside && this is _Inside) return true;
+    return false;
   }
 }
 

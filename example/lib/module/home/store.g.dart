@@ -10,7 +10,13 @@ mixin _$HomeAction {
   Future<dynamic> _when(
       {@required Future<void> Function(_StoreTodos) storeTodos}) {
     if (this is _StoreTodos) return storeTodos(this);
+    assert(false, 'Unknown action instance: ActionGenerator');
     return null;
+  }
+
+  bool isType(bool storeTodos) {
+    if (storeTodos != null && storeTodos && this is _StoreTodos) return true;
+    return false;
   }
 }
 
