@@ -10,7 +10,7 @@ abstract class MountedByBuildMethodPages extends SimplePage with _$MountedByBuil
     const factory MountedByBuildMethodPages.page() = _Page;
 }
 
-class MountedByBuildMethodModule extends Module<MountedByBuildMethodPages> {
+class MountedByBuildMethodModule extends Module<MountedByBuildMethodPages> with ModuleBuilder {
     @override
     Store createStore() => ReadOnlyStore();
 

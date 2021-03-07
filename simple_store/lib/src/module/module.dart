@@ -3,7 +3,7 @@ part of '../store.dart';
 /// Module holds a `Store` and create pages.
 abstract class Module<T extends SimplePage> extends _StatelessWidget with StoreCreator {
     /// The default page to show.
-    T get defaultPage => null;
+    T get defaultPage;
 
     /// Indicate only one page could be shown at one time.
     /// when navigate to a page, it will replace the previous one.
@@ -18,16 +18,11 @@ abstract class Module<T extends SimplePage> extends _StatelessWidget with StoreC
     }
 
     @override
+    @nonVirtual
     Widget onBuild(BuildContext context) {
         final p = context.findAncestorWidgetOfExactType<_CollectorInheritedWidget>();
         assert(p != null);
         return _ModuleInnerWidget(p.collector, Store._of(context, false), this);
-    }
-
-    @protected
-    Widget build(BuildContext context) {
-        assert(defaultPage != null, 'Module[$runtimeType] is mounted to widget tree, but both build() and defaultPage are returned null.');
-        return null;
     }
 
     static _ModuleState _of(BuildContext context) {
@@ -36,12 +31,20 @@ abstract class Module<T extends SimplePage> extends _StatelessWidget with StoreC
         return node as _ModuleState;
     }
 
-    _ModuleStore _createModuleStore(bool mounted) => _ModuleStore<T>(defaultPage, singleActive ? 1 : 2, mounted);
+    _ModuleStore _createModuleStore(bool mounted) => _ModuleStore<T>(
+        defaultPage,
+        singleActive ? 1 : 2,
+        mounted && (this is ModuleBuilder)
+    );
 }
 
-abstract class _ModuleState {
-    Future<dynamic> navTo(SimplePage page);
-    void pop([dynamic result]);
+mixin ModuleBuilder<T extends SimplePage> on Module<T> {
+    /// with this mixin, defaultPage is optional.
+    T get defaultPage => null;
+
+    /// return the widget for the module when it is mounted to widget tree
+    @protected
+    Widget build(BuildContext context);
 }
 
 mixin StoreNavigate<T extends SimpleAction> on Store<T> {
@@ -62,6 +65,11 @@ abstract class PageState extends SimpleState with _$PageState {
     static PageState _new(SimplePage initialPage) {
         return PageState._create(null, [initialPage]);
     }
+}
+
+abstract class _ModuleState {
+    Future<dynamic> navTo(SimplePage page);
+    void pop([dynamic result]);
 }
 
 class _ModuleNode extends _ModuleState with _PageCollector {
@@ -200,19 +208,13 @@ class _ModuleNode extends _ModuleState with _PageCollector {
 }
 
 class _MountedModuleNode extends _ModuleNode {
-    bool _noBuildOverride = false;
-
+    final bool useBuilder;
     _MountedModuleNode(
         _PageCollector collector, Module module, Store parent
-    ): super(collector, module, parent, true);
-
-    set noBuildOverride(bool value) {
-        _noBuildOverride = value;
-        _moduleStore.silentSetDefaultPage();
-    }
+    ): useBuilder = module is ModuleBuilder, super(collector, module, parent, true);
 
     void _changePages(List<SimplePage> news, bool isInit) {
-        if (_noBuildOverride && news.isNotEmpty) news.removeAt(0);
+        if (!useBuilder && news.isNotEmpty) news.removeAt(0);
         super._changePages(news, isInit);
     }
 }
@@ -257,13 +259,14 @@ class __ModuleInnerWidgetState extends State<_ModuleInnerWidget> {
         node.init();
 
         current = widget._module.defaultPage;
-        if (widget._module.singleActive) {
+        if (widget._module.singleActive && !node.useBuilder) {
             final store = node._moduleStore;
 
             remover = store._listen((_) {
                 final state = store._get(_pageStateKey);
-                final c = state._stack.isEmpty ? null : state._stack[0];
-                if (c != null && c != current) {
+                assert(state._stack.isNotEmpty);
+                final c = state._stack[0];
+                if (c != current) {
                     setState(() { current = c; });
                 }
             });
@@ -280,18 +283,10 @@ class __ModuleInnerWidgetState extends State<_ModuleInnerWidget> {
     @override
     Widget build(BuildContext context) {
         return node._wrap(Builder(builder: (ctx) {
-            final child = widget._module.build(ctx);
-            if (child == null) {
-                node.noBuildOverride = true;
-                return widget._module.buildPage(current);
+            if (node.useBuilder) {
+                return (widget._module as ModuleBuilder).build(ctx);
             }
-
-            if (remover != null) {
-                remover();
-                remover = null;
-            }
-
-            return child;
+            return widget._module.buildPage(current);
         }));
     }
 }
@@ -312,8 +307,9 @@ final _pageStateKey = _StateKey<PageState>(PageState, null);
 class _ModuleStore<T extends SimplePage> extends Store<_NavigateAction> {
     final dynamic _initialPage;
     final int _maxStackSize;
+    final int _minStackSize;
     final bool _allowEmpty;
-    _ModuleStore(this._initialPage, this._maxStackSize, this._allowEmpty);
+    _ModuleStore(this._initialPage, this._maxStackSize, this._allowEmpty): _minStackSize = _allowEmpty ? 0 : 1;
 
     @override
     Future handle(StoreSetter set, StoreGetter get, _NavigateAction action) => action._when(
@@ -348,8 +344,7 @@ class _ModuleStore<T extends SimplePage> extends Store<_NavigateAction> {
 
         pop: (p) async {
             final state = get<PageState>();
-            final size = state._stack.length;
-            if ((_allowEmpty && size > 0) || (!_allowEmpty && size > 1)) {
+            if (state._stack.length > _minStackSize) {
                 state._completer?.complete(p.result);
 
                 final stack = List<SimplePage>.from(state._stack);
@@ -367,13 +362,6 @@ class _ModuleStore<T extends SimplePage> extends Store<_NavigateAction> {
         }
     );
 
-    void silentSetDefaultPage() {
-        final c = _get(_pageStateKey);
-        if (c._stack.isEmpty) {
-            _set(false, _pageStateKey, PageState._create(c._completer, [_initialPage]));
-        }
-    }
-
     @override
     void init(StoreInitializer init) {
         if (_allowEmpty) {
@@ -381,7 +369,7 @@ class _ModuleStore<T extends SimplePage> extends Store<_NavigateAction> {
             return;
         }
 
-        assert(_initialPage != null, 'defaultPage in unmounted module must not be null.');
+        assert(_initialPage != null);
         init.state(PageState._new(_initialPage));
     }
 }
