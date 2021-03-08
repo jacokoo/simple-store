@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:flutter/material.dart';
-import 'exception.dart';
 import 'package:simple_store_base/simple_store_base.dart';
 
 part './store/state.dart';
@@ -30,13 +29,15 @@ abstract class Store<T extends SimpleAction> with _Listenable<Set<_StateKey>>, _
         return child;
     }
 
+    bool get debug => false;
+
     @protected
     Future<dynamic> dispatch(StoreSetter set, SimpleAction action) {
         if (set != null) {
             return _handle(set, action);
         }
         assert(() {
-            print('$runtimeType start dispatch $action');
+            if (debug) print('$_tag start dispatch $action');
             return true;
         }());
 
@@ -48,7 +49,7 @@ abstract class Store<T extends SimpleAction> with _Listenable<Set<_StateKey>>, _
             })
             .whenComplete(() {
                 assert(() {
-                    print('$runtimeType dispatch $action end');
+                    if (debug) print('$_tag dispatch $action end');
                     return true;
                 }());
             })
@@ -68,7 +69,10 @@ abstract class Store<T extends SimpleAction> with _Listenable<Set<_StateKey>>, _
 
     @protected
     void onError(SimpleAction action, dynamic e, dynamic stack) {
-        print('handle $action failed\n$e\n $stack');
+        assert(() {
+            if (debug) print('$_tag handle $action failed\n$e\n $stack');
+            return true;
+        }());
         throw e;
     }
 
@@ -100,16 +104,14 @@ abstract class Store<T extends SimpleAction> with _Listenable<Set<_StateKey>>, _
             return _parent._handle(set, action);
         }
 
-        throw UnknownActionException(action);
+        assert(false, 'Unknown action: $action');
     }
 
-    // Call this method before dispatch disposeActions
-    // This is to release the listeners of current store.
     void __willDispose() {
-        __connectedStore?.__willDispose();
         _clearListeners();
         _disposeReference();
         _disposeEvent();
+        __connectedStore?.__willDispose();
     }
 
     void __didDispose() {
@@ -124,16 +126,23 @@ abstract class Store<T extends SimpleAction> with _Listenable<Set<_StateKey>>, _
     }
 
     void _dispose() {
+        assert(() {
+            if (debug) print('$_tag will dispose');
+            return true;
+        }());
         this.__willDispose();
         this.__didDispose();
     }
 
     void _init() {
         __connectedStore?._init();
-
         final initializer = StoreInitializer._(this);
         init(initializer);
         initializer._end();
+        assert(() {
+            if (debug) print('$_tag inited');
+            return true;
+        }());
     }
 
     static Store _of(BuildContext context, bool required) {
@@ -141,4 +150,6 @@ abstract class Store<T extends SimpleAction> with _Listenable<Set<_StateKey>>, _
         assert(!required || s != null, 'Can not find a store from ancestors.');
         return s;
     }
+
+    String get _tag => '$runtimeType';
 }

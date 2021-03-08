@@ -30,6 +30,16 @@ class TypedItem {
 
     static Future<TypedItem> _create(Element e, DartType type, BuildStep step) async {
         var name = type.getDisplayString(withNullability: false);
+        if (
+            type.isDartAsyncFuture || type.isDartAsyncFutureOr ||
+            type.isDartCoreBool || type.isDartCoreDouble ||
+            type.isDartCoreFunction || type.isDartCoreInt ||
+            type.isDartCoreIterable || type.isDartCoreList ||
+            type.isDartCoreMap || type.isDartCoreNull ||
+            type.isDartCoreNum || type.isDartCoreObject ||
+            type.isDartCoreSet || type.isDartCoreString ||
+            type.isDartCoreSymbol
+        ) return TypedItem(name, e.name);
         try {
             final ast = await getAst(e, step);
             if (ast.beginToken.next.toString() == '.') {
@@ -59,7 +69,6 @@ abstract class BaseGenerator<T> extends GeneratorForAnnotation<T> {
         e.fields.forEach((ee) {
             e.ensure(ee.setter == null, 'Can not have mutable fields $ee');
         });
-
         return doGenerate(e, buildStep);
     }
 

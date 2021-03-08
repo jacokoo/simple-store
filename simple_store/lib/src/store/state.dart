@@ -35,15 +35,14 @@ mixin _StateHolder on _Listenable<Set<_StateKey>> {
                     return v;
                 }
             }
-            throw UnknownStateException(key.type, runtimeType);
+            assert(false, '${key.type} is not found in ${(this as Store)._tag}');
         }
         return __state[key];
     }
 
-    bool _set<T extends SimpleState>(bool isInit, _StateKey key, T t) {
-        if (!isInit && !_mayHaveState(key)) {
-            throw UnknownStateException(t, runtimeType);
-        }
+    bool _set<T extends SimpleState>(bool isInit, _StateKey<T> key, T t) {
+        assert(isInit || _mayHaveState(key), '${key.type} is not found in ${(this as Store)._tag}');
+
         if (__state[key] != t) {
             __state[key] = t;
             return true;
@@ -53,6 +52,14 @@ mixin _StateHolder on _Listenable<Set<_StateKey>> {
 
     void _addNamed<T extends SimpleState>(NamedStateInitializer initializer) {
         __initializers[T] = initializer;
+    }
+
+    bool _del<T extends SimpleState>(_StateKey<T> key) {
+        if (__state.containsKey(key)) {
+            __state.remove(key);
+            return true;
+        }
+        return false;
     }
 
     bool _mayHaveState(_StateKey key) =>
@@ -91,6 +98,20 @@ class StoreSetter {
     void call<T extends SimpleState>(T t, {dynamic name}) {
         final key = _StateKey<T>(T, name);
         _key(key, t);
+    }
+
+    /// caution: if delete a non-named state, it will not able to set the deleted type of state
+    /// if delete a named state, the getters will get a default value from the namedInitializer
+    void del<T extends SimpleState>({dynamic name}) {
+        final key = _StateKey<T>(T, name);
+        _init._do(() {
+            if (!_store._del(key)) return;
+            _changed[_store].add(key);
+
+            if (_store._haveReference(key)) {
+                _store._updateReference(this, key);
+            }
+        });
     }
 
     void _key<T extends SimpleState>(_StateKey<T> key, T t) {

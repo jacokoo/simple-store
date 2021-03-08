@@ -137,11 +137,6 @@ class __StoreWidgetState extends State<_StoreWidget> {
         store._init();
 
         widget.aware?._store = store;
-
-        assert(() {
-            print('store: ${store.runtimeType} inited');
-            return true;
-        }());
     }
 
     @override
@@ -151,10 +146,6 @@ class __StoreWidgetState extends State<_StoreWidget> {
 
     @override
     void dispose() {
-        assert(() {
-            print('store: ${store.runtimeType} disposed');
-            return true;
-        }());
         widget.aware?._store = null;
         store._dispose();
         super.dispose();
@@ -173,8 +164,7 @@ class _InnerStoreWidget extends StatefulWidget {
 
 class __InnerStoreWidgetState extends State<_InnerStoreWidget> {
     VoidCallback remover;
-
-    Store getStore() => widget.store;
+    dynamic values;
 
     @override
     void initState() {
@@ -183,7 +173,7 @@ class __InnerStoreWidgetState extends State<_InnerStoreWidget> {
         if (widget.watchedKeys.isNotEmpty) {
             remover = widget.store._listen((data) {
                 if (widget.watchedKeys.any((it) => data.contains(it))) {
-                    setState(() {});
+                    setState(() => values = null);
                 }
             });
         }
@@ -197,7 +187,7 @@ class __InnerStoreWidgetState extends State<_InnerStoreWidget> {
 
     @override
     Widget build(BuildContext context) {
-        final values = widget.watchedKeys.map((it) => widget.store._get(it)).toList();
+        if (values == null) values = widget.watchedKeys.map((it) => widget.store._get(it)).toList();
         return widget.builder(values);
     }
 }
@@ -214,15 +204,24 @@ class _Watch extends StatelessWidget {
     }
 }
 
-class _Get extends StatelessWidget {
+class _Get extends StatefulWidget {
     final List<_StateKey> watchedKeys;
     final Widget Function(List<dynamic>) builder;
-
     _Get({this.watchedKeys, this.builder});
 
     @override
+    State<StatefulWidget> createState() => _GetState();
+}
+
+class _GetState extends State<_Get> {
+    dynamic values;
+
+    @override
     Widget build(BuildContext context) {
-        final store = Store._of(context, true);
-        return builder(watchedKeys.map((e) => store._get(e)).toList());
+        if (values == null) {
+            final store = Store._of(context, true);
+            values = widget.watchedKeys.map((e) => store._get(e)).toList();
+        }
+        return widget.builder(values);
     }
 }

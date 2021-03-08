@@ -19,7 +19,7 @@ class MountedByDefaultPageModule extends Module<MountedByDefaultPagePages> {
     MountedByDefaultPagePages get defaultPage => MountedByDefaultPagePages.page();
 
     @override
-    Store createStore() => ReadOnlyStore();
+    Store createStore() => ReadOnlyStore('$runtimeType');
 
     @override
     Widget buildPage(MountedByDefaultPagePages page) => page._when(

@@ -315,9 +315,7 @@ class _ModuleStore<T extends SimplePage> extends Store<_NavigateAction> {
     Future handle(StoreSetter set, StoreGetter get, _NavigateAction action) => action._when(
         navTo: (p) async {
             if (p.page is! T) {
-                if (_parent == null) {
-                    throw UnknownActionException(action);
-                }
+                assert(_parent != null, 'Unknown navigate action: $action');
                 return _parent.dispatch(set, action);
             }
 

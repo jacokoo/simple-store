@@ -8,9 +8,7 @@ class _Initializer {
     }
 
     T _do<T>(T Function() fn) {
-        if (_ended) {
-            throw InitializerEndedException(this);
-        }
+        assert(!_ended, 'Initializer is out of scope');
         return fn();
     }
 }
@@ -41,8 +39,7 @@ class StoreInitializer with _Initializer {
                 }
                 p = p._parent;
             }
-
-            throw UnknownStateException(T, runtimeType);
+            assert(false, '$T is not found in ${_owner._tag}');
         });
     }
 
@@ -58,25 +55,26 @@ class StoreInitializer with _Initializer {
         });
     }
 
-    void event<T extends SimpleState>({dynamic name}) {
+    void event<T extends SimpleState>() {
         _do(() {
-            _owner._addEmitter(_StateKey<T>(T, name));
+            _owner._addEmitter(_StateKey<T>(T, null));
         });
     }
 
-    void listen<T extends SimpleState>({dynamic name, _Listener<T> listener}) {
+    void listen<T extends SimpleState>({dynamic name, @required _Listener<T> listener}) {
         _do(() {
-            final key = _StateKey<T>(T, name);
+            final emitterKey = _StateKey<T>(T, null);
+            final listenerKey = _StateKey<T>(T, name);
             var p = _owner._parent;
             while (p != null) {
-                if (p._haveEmitter(key)) {
-                    _owner._listenTo(p, key, listener);
+                if (p._haveEmitter(emitterKey)) {
+                    _owner._listenTo(p, listenerKey, listener);
                     return;
                 }
                 p = p._parent;
             }
 
-            throw UnknownEventException(T);
+            assert(false, 'Can not found event emitter for type $T');
         });
     }
 }

@@ -1,36 +1,48 @@
 part of '../store.dart';
 
 mixin _EventHolder {
-    Map<_StateKey, _Emitter> __emitters = {};
+    Set<_StateKey> __emitters = {};
+    Map<_StateKey, Set<dynamic>> __listeners = {};
     List<VoidCallback> __listenerRemovers = [];
 
     void _addEmitter(_StateKey key) {
-        __emitters[key] = _Emitter();
+        __emitters.add(key);
     }
 
-    bool _haveEmitter(_StateKey key) => __emitters.containsKey(key);
+    bool _haveEmitter(_StateKey key) => __emitters.contains(key);
+
+    VoidCallback __addListener<T extends SimpleState>(_StateKey<T> key, _Listener<T> listener) {
+        if (!__listeners.containsKey(key)) {
+            __listeners[key] = {};
+        }
+        __listeners[key].add(listener);
+        return () {
+            if (!__listeners.containsKey(key)) return;
+            __listeners[key].remove(listener);
+            if (__listeners[key].isEmpty) {
+                __listeners.remove(key);
+            }
+        };
+    }
 
     void _listenTo<T extends SimpleState>(_EventHolder owner, _StateKey<T> key, _Listener<T> listener) {
-        final emitter = owner.__emitters[key];
-        assert(emitter != null);
-        __listenerRemovers.add(emitter._listen2(listener));
+        __listenerRemovers.add(owner.__addListener(key, listener));
     }
 
     void _disposeEvent() {
         __listenerRemovers.forEach((e) => e());
         __listenerRemovers = [];
 
-        __emitters.values.forEach((e) => e._clearListeners());
-        __emitters = {};
+        __listeners.clear();
+        __emitters.clear();
     }
 
     @protected
     void emit<T extends SimpleState>(T t, {dynamic name}) {
         final key = _StateKey<T>(T, name);
-        final emitter = __emitters[key];
-        assert(emitter != null);
-        emitter._notify(t);
+        final ls = __listeners[key];
+        if (ls == null || ls.isEmpty) return;
+        final cp = List.from(ls);
+        cp.forEach((e) => e(t));
     }
 }
-
-class _Emitter with _Listenable {}

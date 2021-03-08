@@ -12,7 +12,7 @@ abstract class MountedByBuildMethodPages extends SimplePage with _$MountedByBuil
 
 class MountedByBuildMethodModule extends Module<MountedByBuildMethodPages> with ModuleBuilder {
     @override
-    Store createStore() => ReadOnlyStore();
+    Store createStore() => ReadOnlyStore('$runtimeType');
 
     @override
     Widget buildPage(MountedByBuildMethodPages page) => page._when(

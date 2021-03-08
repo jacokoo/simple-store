@@ -12,10 +12,10 @@ class ReferenceSetter {
 
     void call<T extends SimpleState>(T t, {dynamic name}) {
         final key = _StateKey<T>(T, name);
-
-        if (key != _refKey && !_setter._store._mayHaveState(key)) {
-            throw UnknownStateException(t, _setter._store.runtimeType);
-        }
+        assert(
+            key == _refKey || _setter._store._mayHaveState(key),
+            '${key.type} is not found in ${(_setter._store as Store)._tag}'
+        );
         _setter._key(key, t);
     }
 }

@@ -65,7 +65,8 @@ typedef Dispatcher = Future<dynamic> Function(SimpleAction);
 
 class ReadOnlyStore extends StateOnlyStore {
     final void Function(ReferenceCreator, Dispatcher) initializer;
-    ReadOnlyStore([this.initializer]);
+    final String debugName;
+    ReadOnlyStore(this.debugName, [this.initializer]);
 
     @override
     @mustCallSuper
@@ -75,6 +76,8 @@ class ReadOnlyStore extends StateOnlyStore {
             (action) => dispatch(null, action)
         );
     }
+
+    String get _tag => 'ReadOnlyStore[$debugName]';
 }
 
 class _ValueStore<T> extends Store<_SetValueAction> {
@@ -116,14 +119,6 @@ mixin _Listenable<T> {
     final _listeners = LinkedList<_Entry>();
 
     VoidCallback _listen(_Listener<T> fn) {
-        return _listen2(fn);
-    }
-
-    // maybe because the _Listenable is used in Map
-    // if use _Listener<T> here, will cause
-    // type '(SomeType) => Null' is not a subtype of type '(dynamic) => void'
-    // so use listen2 for map
-    VoidCallback _listen2(dynamic fn) {
         final entry = _Entry(fn);
         _listeners.add(entry);
         return () {
