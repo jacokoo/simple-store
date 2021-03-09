@@ -14,7 +14,7 @@ class ReferenceSetter {
         final key = _StateKey<T>(T, name);
         assert(
             key == _refKey || _setter._store._mayHaveState(key),
-            '${key.type} is not found in ${(_setter._store as Store)._tag}'
+            '$key is not found in ${(_setter._store as Store)._tag}'
         );
         _setter._key(key, t);
     }

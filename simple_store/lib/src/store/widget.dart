@@ -190,6 +190,12 @@ class __InnerStoreWidgetState extends State<_InnerStoreWidget> {
         if (values == null) values = widget.watchedKeys.map((it) => widget.store._get(it)).toList();
         return widget.builder(values);
     }
+
+    @override
+    void didUpdateWidget(_InnerStoreWidget oldWidget) {
+        super.didUpdateWidget(oldWidget);
+        values = null;
+    }
 }
 
 class _Watch extends StatelessWidget {
@@ -223,5 +229,11 @@ class _GetState extends State<_Get> {
             values = widget.watchedKeys.map((e) => store._get(e)).toList();
         }
         return widget.builder(values);
+    }
+
+    @override
+    void didUpdateWidget(_Get oldWidget) {
+        super.didUpdateWidget(oldWidget);
+        values = null;
     }
 }

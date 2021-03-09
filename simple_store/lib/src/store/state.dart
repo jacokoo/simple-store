@@ -18,7 +18,7 @@ class _StateKey<T extends SimpleState> {
 
     @override
     String toString() {
-        return '_StateKey<$T>($type, $name)';
+        return name == null ? 'Key($type)' : 'Key($type, $name)';
     }
 }
 
@@ -35,13 +35,13 @@ mixin _StateHolder on _Listenable<Set<_StateKey>> {
                     return v;
                 }
             }
-            assert(false, '${key.type} is not found in ${(this as Store)._tag}');
+            assert(false, '$key is not found in ${(this as Store)._tag}');
         }
         return __state[key];
     }
 
     bool _set<T extends SimpleState>(bool isInit, _StateKey<T> key, T t) {
-        assert(isInit || _mayHaveState(key), '${key.type} is not found in ${(this as Store)._tag}');
+        assert(isInit || _mayHaveState(key), '$key is not found in ${(this as Store)._tag}');
 
         if (__state[key] != t) {
             __state[key] = t;
