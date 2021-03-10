@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:isolate';
 
 import 'package:flutter/material.dart';
 import 'package:simple_store_base/simple_store_base.dart';
@@ -13,8 +14,10 @@ part './store/util.dart';
 part './module/module.dart';
 part './module/app.dart';
 part './module/generated.dart';
+part './isolate/isolate.dart';
 
 abstract class Store<T extends SimpleAction> {
+    bool __inited = false;
     Store __parent;
     Store __connectedStore;
     _StateHolder _state;
@@ -148,6 +151,7 @@ abstract class Store<T extends SimpleAction> {
         final initializer = StoreInitializer._(this);
         init(initializer);
         initializer._end();
+        __inited = true;
         assert(() {
             if (debug) print('$_tag inited');
             return true;
