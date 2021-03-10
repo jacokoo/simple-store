@@ -21,7 +21,7 @@ abstract class TodoStorageState extends SimpleState with _$TodoStorageState {
 class HomeStore extends Store<HomeAction> {
     @override
     void init(StoreInitializer init) {
-        init.ref<PageState>(setter: (ps, _) {
+        init.transform<PageState>((ps, _) {
             print('page change ${ps.current}');
         });
 

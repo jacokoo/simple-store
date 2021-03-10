@@ -15,7 +15,7 @@ part './module/module.dart';
 part './module/app.dart';
 part './module/generated.dart';
 
-abstract class Store<T extends SimpleAction> with _Listenable<Set<_StateKey>>, _StateHolder, _StateReference, _EventHolder {
+abstract class Store<T extends SimpleAction> with _Listenable<Set<_StateKey>>, _StateHolder, _EventHolder {
     Store __parent;
     Store __connectedStore;
 
@@ -109,7 +109,6 @@ abstract class Store<T extends SimpleAction> with _Listenable<Set<_StateKey>>, _
 
     void __willDispose() {
         _clearListeners();
-        _disposeReference();
         _disposeEvent();
         __connectedStore?.__willDispose();
     }

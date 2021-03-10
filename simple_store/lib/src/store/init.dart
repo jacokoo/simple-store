@@ -28,30 +28,16 @@ class StoreInitializer with _Initializer {
         _root._end();
     }
 
-    void ref<T extends SimpleState>({dynamic name, ReferenceTransformer<T> setter}) {
-        _do(() {
-            final key = _StateKey<T>(T, name);
-            var p = _owner._parent;
-            while (p != null) {
-                if (p._mayHaveState(key)) {
-                    _owner._dependTo(p, key, setter, _setter);
-                    return;
-                }
-                p = p._parent;
-            }
-            assert(false, '$T is not found in ${_owner._tag}');
-        });
-    }
-
     void state<T extends SimpleState>(T t, {dynamic name}) {
         _do(() {
-            _owner._set(true, _StateKey<T>(T, name), t);
+            _State state = name == null ? _ValueState(t) : _NamedState.value(name, t);
+            _owner._add<T>(state);
         });
     }
 
     void namedState<T extends SimpleState>(NamedStateInitializer<T> initializer) {
         _do(() {
-            _owner._addNamed<T>(initializer);
+            _owner._add<T>(_NamedState(initializer));
         });
     }
 
@@ -61,20 +47,50 @@ class StoreInitializer with _Initializer {
         });
     }
 
+    void ref<T extends SimpleState>({dynamic name}) {
+        final key = _StateKey<T>(T, name);
+        final result = __visiteParent((p) {
+            if (p._mayHaveState(key)) {
+                _owner._add<T>(p._createReference<T>(_owner, name));
+                return true;
+            }
+        });
+        assert(result, '$T is not found in ${_owner._tag}');
+    }
+
+    void transform<T extends SimpleState>(Transformer<T> transformer, {dynamic name}) {
+        final key = _StateKey<T>(T, name);
+        final result = __visiteParent((p) {
+            if (p._mayHaveState(key)) {
+                final trans = _Transformer(_owner, transformer);
+                _owner.__trans[trans] = p._addTransformer<T>(key, trans, _setter);
+                return true;
+            }
+        });
+        assert(result, '$T is not found in ${_owner._tag}');
+    }
+
     void listen<T extends SimpleState>({dynamic name, @required _Listener<T> listener}) {
-        _do(() {
-            final emitterKey = _StateKey<T>(T, null);
-            final listenerKey = _StateKey<T>(T, name);
+        final emitterKey = _StateKey<T>(T, null);
+        final listenerKey = _StateKey<T>(T, name);
+        final result = __visiteParent((p) {
+            if (p._haveEmitter(emitterKey)) {
+                _owner._listenTo(p, listenerKey, listener);
+                return true;
+            }
+        });
+
+        assert(result, 'Can not found event emitter for type $T');
+    }
+
+    bool __visiteParent(dynamic Function(Store) fn) {
+        return _do(() {
             var p = _owner._parent;
             while (p != null) {
-                if (p._haveEmitter(emitterKey)) {
-                    _owner._listenTo(p, listenerKey, listener);
-                    return;
-                }
+                if (fn(p) != null) return true;
                 p = p._parent;
             }
-
-            assert(false, 'Can not found event emitter for type $T');
+            return false;
         });
     }
 }

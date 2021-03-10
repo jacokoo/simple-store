@@ -45,7 +45,7 @@ class TodoStore extends Store<TodoAction> {
     void init(StoreInitializer init) {
         init.state(TodoState._create(FilterType.All, BuiltList.from([])));
 
-        init.ref<TodoStorageState>(setter: (hs, set) {
+        init.transform<TodoStorageState>((hs, set) {
             set(TodoState._create(FilterType.All, hs.todos));
         });
     }

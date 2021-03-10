@@ -38,7 +38,7 @@ abstract class ValueComponent<T> extends _StatelessWidget with StoreCreator {
     Widget build(BuildContext context);
 
     Widget watch({Widget Function(T) builder}) {
-        return Watch<_ValueState>(builder: (vs) => builder(vs.value));
+        return Watch<__ValueState>(builder: (vs) => builder(vs.value));
     }
 
     Future<dynamic> set(T t) {

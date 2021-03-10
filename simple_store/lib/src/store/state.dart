@@ -1,6 +1,5 @@
 part of '../store.dart';
 
-
 typedef NamedStateInitializer<T extends SimpleState> = T Function(dynamic name);
 
 class _StateKey<T extends SimpleState> {
@@ -22,76 +21,333 @@ class _StateKey<T extends SimpleState> {
     }
 }
 
+abstract class _State {
+    SimpleState get(dynamic name);
+
+    bool exists(dynamic name, bool exact);
+
+    // 0bxy x whether to remove, y whether changed
+    int delete(dynamic name);
+
+    bool set(dynamic name, SimpleState state, StoreSetter set);
+
+    Set<Store> collect(dynamic name);
+
+    VoidCallback addTransformer(dynamic name, _Transformer transformer);
+
+    VoidCallback addReference(dynamic name, _Reference reference);
+
+    void notifyDeleted(dynamic name);
+}
+
+abstract class _AbstractState extends _State {
+    final references = _Holder<_Reference>();
+    final transformers = _Holder<_Transformer>();
+
+    VoidCallback addTransformer(dynamic name, _Transformer transformer) {
+        assert(name == null);
+        return transformers.add(transformer);
+    }
+
+    VoidCallback addReference(dynamic name, _Reference reference) {
+        assert(name == null);
+        return references.add(reference);
+    }
+
+    Set<Store> collect(dynamic name) {
+        return references.flat((item) => item.collect(name));
+    }
+
+    bool set(dynamic name, SimpleState state, StoreSetter set) {
+        assert(name == null);
+
+        final result = doSet(name, state);
+        if (result) {
+            transformers.forEach((e) => e.transform(state, set));
+        }
+        return result;
+    }
+
+    bool doSet(dynamic name, SimpleState state);
+
+    int delete(dynamic name) {
+        assert(name == null);
+        notifyDeleted(name);
+        return 3;
+    }
+
+    void notifyDeleted(dynamic name) {
+        assert(name == null);
+        references.forEach((e) => e.deleted(name));
+        transformers.forEach((e) => e.deleted());
+    }
+}
+
+abstract class _AbstractNamedState extends _AbstractState {
+    final namedTransformers = _MapHolder<_Transformer>();
+    final namedReferences = _MapHolder<_Reference>();
+
+    VoidCallback addTransformer(dynamic name, _Transformer transformer) {
+        assert(name != null);
+        return namedTransformers.add(name, transformer);
+    }
+
+    VoidCallback addReference(dynamic name, _Reference reference) {
+        if (name == null) return super.addReference(name, reference);
+        return namedReferences.add(name, reference);
+    }
+
+    Set<Store> collect(dynamic name) {
+        if (name == null) return super.collect(name);
+        return namedReferences.flat(name, (item) => item.collect(name));
+    }
+
+    int delete(dynamic name) {
+        final result = doDelete(name);
+        if (result & 2 == 2) {
+            if (name == null) super.notifyDeleted(name);
+            notifyDeleted(name);
+        }
+        return result;
+    }
+
+    int doDelete(dynamic name);
+
+    bool set(dynamic name, SimpleState state, StoreSetter set) {
+        assert(name != null);
+        final result = doSet(name, state);
+        if (result) {
+            namedTransformers.forEach(name, (e) => e.transform(state, set));
+        }
+        return result;
+    }
+
+    void notifyDeleted(dynamic name) {
+        if (name != null) {
+            namedTransformers.forEach(name, (e) => e.deleted());
+            namedReferences.forEach(name, (e) => e.deleted(name));
+        } else {
+            namedTransformers.all((e) => e.deleted());
+            namedReferences.all((e) => e.deleted(name));
+        }
+    }
+}
+
+abstract class _Reference extends _State {
+    void deleted(dynamic name);
+}
+
+class _ValueState extends _AbstractState {
+    SimpleState _value;
+    _ValueState(this._value);
+
+    @override
+    SimpleState get(name) {
+        assert(name == null);
+        return _value;
+    }
+
+    @override
+    bool doSet(name, value) {
+        if (_value == value) return false;
+
+        _value = value;
+        return true;
+    }
+
+    @override
+    bool exists(name, exact) {
+        return name == null;
+    }
+
+    @override
+    String toString() {
+        String s = 'ValueState';
+        assert(() {
+            s = 'ValueState[${_value.runtimeType}]';
+            return true;
+        }());
+        return s;
+    }
+}
+
+class _NamedState extends _AbstractNamedState {
+    Map<dynamic, SimpleState> _states = {};
+    NamedStateInitializer _initializer;
+    _NamedState(this._initializer);
+    _NamedState.value(dynamic name, SimpleState value): _initializer = null {
+        _states[name] = value;
+    }
+
+    @override
+    SimpleState get(name) {
+        assert(name != null);
+        if (_states.containsKey(name)) {
+            return _states[name];
+        }
+
+        if (_initializer == null) return null;
+
+        final value = _initializer(name);
+        if (value != null) {
+            _states[name] = value;
+        }
+        return value;
+    }
+
+    @override
+    bool doSet(name, value) {
+        if (_states[name] == value) return false;
+
+        _states[name] = value;
+        return true;
+    }
+
+    @override
+    int doDelete(name) {
+        if (name == null) {
+            return _states.isEmpty ? 2 : 3;
+        }
+        if (!_states.containsKey(name)) return 0;
+        _states.remove(name);
+        return 1;
+    }
+
+    @override
+    bool exists(name, exact) {
+        if (name == null) return true;
+        return exact ? _states.containsKey(name) : true;
+    }
+
+    void merge(_NamedState other) {
+        assert(_initializer == null || _initializer == null);
+        _initializer ??= other._initializer;
+        _states.addAll(other._states);
+    }
+
+    @override
+    String toString() {
+        String s = 'NamedState';
+        assert(() {
+            final ss = _states.entries.map((e) => '(${e.key}, ${e.value.runtimeType})').join(',');
+            s = '$s[$ss]';
+            return true;
+        }());
+        return s;
+    }
+}
+
 mixin _StateHolder on _Listenable<Set<_StateKey>> {
-    Map<_StateKey, SimpleState> __state = {};
-    Map<Type, NamedStateInitializer> __initializers = {};
+    Map<Type, _State> __state = {};
+    Map<_Transformer, VoidCallback> __trans = {};
 
     T _get<T extends SimpleState>(_StateKey<T> key) {
-        if (!__state.containsKey(key)) {
-            if (key.name != null && __initializers.containsKey(key.type)) {
-                final v = __initializers[key.type](key.name);
-                if (v != null) {
-                    __state[key] = v;
-                    return v;
-                }
+        if (__state.containsKey(key.type)) {
+            final state = __state[key.type].get(key.name);
+            if (state != null) {
+                return state;
             }
-            assert(false, '$key is not found in ${(this as Store)._tag}');
         }
-        return __state[key];
+        assert(false, '$key is not found in ${(this as Store)._tag}');
+        return null;
     }
 
-    bool _set<T extends SimpleState>(bool isInit, _StateKey<T> key, T t) {
-        assert(isInit || _mayHaveState(key), '$key is not found in ${(this as Store)._tag}');
+    Set<Store> _set<T extends SimpleState>(_StateKey<T> key, T t, StoreSetter set) {
+        assert(__state.containsKey(key.type), '$key is not found in ${(this as Store)._tag}');
+        final success = __state[key.type].set(key.name, t, set);
+        if (success) return __state[key.type].collect(key.name)..add(this);
+        return {};
+    }
 
-        if (__state[key] != t) {
-            __state[key] = t;
-            return true;
+    // for init
+    void _add<T extends SimpleState>(_State state) {
+        if (!__state.containsKey(T)) {
+            __state[T] = state;
+            return;
         }
-        return false;
-    }
 
-    void _addNamed<T extends SimpleState>(NamedStateInitializer initializer) {
-        __initializers[T] = initializer;
-    }
-
-    bool _del<T extends SimpleState>(_StateKey<T> key) {
-        if (__state.containsKey(key)) {
-            __state.remove(key);
-            return true;
+        if (state is _NamedState && __state[T] is _NamedState) {
+            (__state[T] as _NamedState).merge(state);
+            return;
         }
-        return false;
+
+        if (state is _NamedReferenceState && __state[T] is _NamedReferenceState) {
+            (__state[T] as _NamedReferenceState).merge(state);
+            return;
+        }
+
+        assert(false, 'can not add state $T');
     }
 
-    bool _mayHaveState(_StateKey key) =>
-        __state.containsKey(key) || __initializers.containsKey(key.type);
+    // for init
+    VoidCallback _addTransformer<T extends SimpleState>(_StateKey<T> key, _Transformer trans, StoreSetter set) {
+        final state = _get<T>(key);
+        trans.transform(state, set);
+        return __state[T].addTransformer(key.name, trans);
+    }
+
+    Set<Store> _del<T extends SimpleState>(_StateKey<T> key) {
+        assert(__state.containsKey(key.type), '$key is not found in ${(this as Store)._tag}');
+        final state = __state[key.type];
+        final changed = state.collect(key.name)..add(this);
+
+        final result = __state[key.type].delete(key.name);
+        if (result & 2 == 2) {
+            __state.remove(key.type);
+        }
+        return result & 1 == 1 ? changed : {};
+    }
 
     bool _haveState(_StateKey key) {
-        if (__state.containsKey(key)) return true;
-        if (key.name == null && __initializers.containsKey(key.type)) return true;
-        return false;
+        if (!__state.containsKey(key.type)) return false;
+        return __state[key.type].exists(key.name, true);
+    }
+
+    bool _mayHaveState(_StateKey key) {
+        if (!__state.containsKey(key.type)) return false;
+        return __state[key.type].exists(key.name, false);
+    }
+
+    _Reference _createReference<T extends SimpleState>(Store sub, dynamic name) {
+        final state = __state[T];
+        if (state is _AbstractNamedState) {
+            return name == null ?
+                _EntireReferenceState<T>(sub, state) as _Reference :
+                _NamedReferenceState<T>(sub, name, state);
+        }
+
+        return _ReferenceState<T>(state, sub);
     }
 
     void _disposeState() {
-        __state = {};
-        __initializers = {};
+        __trans.values.forEach((e) => e());
+        __trans.clear();
+
+        __state.values.forEach((e) {
+            assert(() {
+                final store = this as Store;
+                if (store.debug) {
+                    print('${store._tag} dispose state $e');
+                }
+                return true;
+            }());
+            e.delete(null);
+        });
+        __state.clear();
     }
 }
 
 class StoreSetter {
     final StoreSetter _parent;
     final _Initializer _init;
-    final Map<_StateReference, Set<_StateKey>> _changed;
-    final _StateReference _store;
+    final Map<Store, Set<_StateKey>> _changed;
+    final Store _store;
     final bool _isInit;
 
     StoreSetter._(this._isInit): _init = _Initializer(), _changed = {}, _store = null, _parent = null;
-    StoreSetter.__forSub(this._isInit, this._init, this._changed, this._store, this._parent) {
-        if (!_changed.containsKey(_store)) {
-            _changed[_store] = {};
-        }
-    }
+    StoreSetter.__forSub(this._isInit, this._init, this._changed, this._store, this._parent);
 
-    StoreSetter _sub(_StateReference store) {
+    StoreSetter _sub(Store store) {
         return StoreSetter.__forSub(_isInit, _init, _changed, store, this);
     }
 
@@ -105,25 +361,15 @@ class StoreSetter {
     void del<T extends SimpleState>({dynamic name}) {
         final key = _StateKey<T>(T, name);
         _init._do(() {
-            if (!_store._del(key)) return;
-            _changed[_store].add(key);
-
-            if (_store._haveReference(key)) {
-                _store._updateReference(this, key);
-            }
+            final changed = _store._del(key);
+            if (changed.isNotEmpty) _addChanged(changed, key);
         });
     }
 
     void _key<T extends SimpleState>(_StateKey<T> key, T t) {
         _init._do(() {
-            if (!_store._set(_isInit, key, t)) {
-                return;
-            }
-            _changed[_store].add(key);
-
-            if (_store._haveReference(key)) {
-                _store._updateReference(this, key);
-            }
+            final changed = _store._set(key, t, this);
+            if (changed.isNotEmpty) _addChanged(changed, key);
         });
     }
 
@@ -137,6 +383,13 @@ class StoreSetter {
                 e.key._notify(e.value);
             });
         }
+    }
+
+    void _addChanged(Set<Store> stores, _StateKey key) {
+        stores.forEach((e) {
+            if (!_changed.containsKey(e)) _changed[e] = {};
+            _changed[e].add(key);
+        });
     }
 }
 

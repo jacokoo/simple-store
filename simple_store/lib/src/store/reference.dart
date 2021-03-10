@@ -1,80 +1,200 @@
 part of '../store.dart';
 
+class _ReferenceState<T extends SimpleState> extends _AbstractState implements _Reference {
+    final _State _referred;
+    final Store _store;
+    VoidCallback _remover;
+    _ReferenceState(this._referred, this._store) {
+        _remover = _referred.addReference(null, this);
+    }
 
-typedef ReferenceTransformer<T extends SimpleState> = void Function(T state, ReferenceSetter set);
+    @override
+    bool exists(name, exact) => _referred.exists(name, exact);
 
-class ReferenceSetter {
+    @override
+    SimpleState get(name) => _referred.get(name);
+
+    @override
+    bool doSet(name, SimpleState value) {
+        assert(false, 'Can not update a reference state');
+        return false;
+    }
+
+    @override
+    Set<Store> collect(dynamic name) {
+        return super.collect(name)..add(_store);
+    }
+
+    @override
+    int delete(dynamic name) {
+        _remover();
+        return super.delete(name);
+    }
+
+    @override
+    void deleted(_) {
+        _store._del<T>(_StateKey(T, null));
+    }
+
+    @override
+    String toString() {
+        String s = 'ReferenceState';
+        assert(() {
+            s = '$s[$_referred]';
+            return true;
+        }());
+        return s;
+    }
+}
+
+class _EntireReferenceState<T extends SimpleState> extends _AbstractNamedState implements _Reference {
+    final _State _referred;
+    final Store _store;
+    VoidCallback _remover;
+    _EntireReferenceState(this._store, this._referred): assert(_referred is _AbstractNamedState) {
+        _remover = _referred.addReference(null, this);
+    }
+
+    @override
+    void deleted(name) {
+        _store._del(_StateKey(T, name));
+    }
+
+    @override
+    int doDelete(name) {
+        assert(name == null);
+        _remover();
+        return 3;
+    }
+
+    @override
+    bool doSet(name, SimpleState state) {
+        assert(false, 'Can not update a reference state');
+        return false;
+    }
+
+    @override
+    bool exists(name, bool exact) {
+        return _referred.exists(name, exact);
+    }
+
+    @override
+    SimpleState get(name) {
+        return _referred.get(name);
+    }
+
+    @override
+    Set<Store> collect(dynamic name) {
+        return super.collect(name)..add(_store);
+    }
+
+    @override
+    String toString() {
+        String s = 'EntireReferenceState';
+        assert(() {
+            s = '$s[$_referred]';
+            return true;
+        }());
+        return s;
+    }
+}
+
+class _NamedReferenceState<T extends SimpleState> extends _AbstractNamedState implements _Reference {
+    final Set<dynamic> _names = {};
+    final _State _referred;
+    final Store _store;
+    final Map<dynamic, VoidCallback> _removers = {};
+    _NamedReferenceState(this._store, dynamic name, this._referred):
+        assert(name != null), assert(_referred is _AbstractNamedState) {
+        _removers[name] = _referred.addReference(name, this);
+        _names.add(name);
+    }
+
+    @override
+    void deleted(dynamic name) {
+        _store._del(_StateKey(T, name));
+    }
+
+    @override
+    int doDelete(name) {
+        if (_names.contains(name)) {
+            _names.remove(name);
+            _removers[name]();
+            return _names.isEmpty ? 3 : 1;
+        }
+        return 0;
+    }
+
+    @override
+    bool doSet(name, SimpleState state) {
+        assert(false, 'Can not update a reference state');
+        return false;
+    }
+
+    @override
+    bool exists(name, bool exact) {
+        if (!_names.contains(name)) return false;
+        return _referred.exists(name, exact);
+    }
+
+    @override
+    SimpleState get(name) {
+        assert(name != null && _names.contains(name));
+        return _referred.get(name);
+    }
+
+    void merge(_NamedReferenceState other) {
+        assert(_referred == other._referred);
+        other._removers.values.forEach((e) => e());
+        other._names.forEach((name) {
+            assert(!_names.contains(name));
+            _removers[name] = _referred.addReference(name, this);
+            _names.add(name);
+        });
+    }
+
+    @override
+    Set<Store> collect(dynamic name) {
+        if (!_names.contains(name)) return {};
+        return super.collect(name)..add(_store);
+    }
+
+    @override
+    String toString() {
+        String s = 'NamedReferenceState';
+        assert(() {
+            s = '$s[$_referred] with names: $_names';
+            return true;
+        }());
+        return s;
+    }
+}
+
+typedef Transformer<T extends SimpleState> = void Function(T state, TransformSetter set);
+
+class TransformSetter {
     final StoreSetter _setter;
-    final _StateKey _refKey;
-    ReferenceSetter._(this._setter, this._refKey);
+    TransformSetter._(this._setter);
 
     bool get isInit => _setter._isInit;
 
     void call<T extends SimpleState>(T t, {dynamic name}) {
-        final key = _StateKey<T>(T, name);
-        assert(
-            key == _refKey || _setter._store._mayHaveState(key),
-            '$key is not found in ${(_setter._store as Store)._tag}'
-        );
-        _setter._key(key, t);
+        _setter._key(_StateKey<T>(T, name), t);
     }
 }
 
-mixin _StateReference on _StateHolder {
-    Map<_StateKey, List<_StateReference>> __refs = {};
-    List<VoidCallback> __refRemovers = [];
-    Map<_StateKey, dynamic> __refSetters = {};
+class _Transformer {
+    final Store _store;
+    final dynamic _transformer;
+    _Transformer(this._store, this._transformer);
 
-    VoidCallback _addReference(_StateKey key, _StateReference store) {
-        if (__refs.containsKey(key)) {
-            __refs[key].add(store);
-        } else {
-            __refs[key] = [store];
-        }
-
-        return () {
-            if (!__refs.containsKey(key)) return;
-            __refs[key].remove(store);
-            if (__refs[key].isEmpty) {
-                __refs.remove(key);
-            }
-        };
+    void transform(SimpleState state, StoreSetter set) {
+        _transformer(state, TransformSetter._(set._sub(_store)));
     }
 
-    bool _haveReference(_StateKey key) => __refs.containsKey(key);
-
-    void _updateReference<T extends SimpleState>(StoreSetter set, _StateKey<T> key) {
-        if (!_haveReference(key)) return;
-
-        final s = _get(key);
-        __refs[key].forEach((e) {
-            e._updateState(key, s, set);
-        });
-    }
-
-    void _dependTo<T extends SimpleState>(_StateReference store, _StateKey<T> key, ReferenceTransformer<T> transform, StoreSetter setter) {
-        __refRemovers.add(store._addReference(key, this));
-        final s = store._get(key);
-        if (transform != null) {
-            __refSetters[key] = transform;
-        }
-        _updateState(key, s, setter);
-    }
-
-    void _updateState<T extends SimpleState>(_StateKey<T> key, SimpleState v, StoreSetter set) {
-        final sub = set._sub(this);
-        if (__refSetters.containsKey(key)) {
-            final setter = ReferenceSetter._(sub, key);
-            __refSetters[key](v, setter);
-        } else {
-            sub._key(key, v);
-        }
-    }
-
-    void _disposeReference() {
-        __refRemovers.forEach((e) { e(); });
-        __refRemovers = [];
-        __refSetters = {};
-        __refs = {};
+    void deleted() {
+        final remover = _store.__trans[this];
+        remover();
+        _store.__trans.remove(this);
     }
 }
