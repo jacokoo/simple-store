@@ -171,10 +171,8 @@ class __InnerStoreWidgetState extends State<_InnerStoreWidget> {
         super.initState();
 
         if (widget.watchedKeys.isNotEmpty) {
-            remover = widget.store._listen((data) {
-                if (widget.watchedKeys.any((it) => data.contains(it))) {
-                    setState(() => values = null);
-                }
+            remover = widget.store._state._watcher._watch(widget.watchedKeys, (data) {
+                setState(() => values = data);
             });
         }
     }
@@ -187,7 +185,7 @@ class __InnerStoreWidgetState extends State<_InnerStoreWidget> {
 
     @override
     Widget build(BuildContext context) {
-        if (values == null) values = widget.watchedKeys.map((it) => widget.store._get(it)).toList();
+        if (values == null) values = widget.watchedKeys.map((it) => widget.store._state._get(it)).toList();
         return widget.builder(values);
     }
 
@@ -226,7 +224,7 @@ class _GetState extends State<_Get> {
     Widget build(BuildContext context) {
         if (values == null) {
             final store = Store._of(context, true);
-            values = widget.watchedKeys.map((e) => store._get(e)).toList();
+            values = widget.watchedKeys.map((e) => store._state._get(e)).toList();
         }
         return widget.builder(values);
     }

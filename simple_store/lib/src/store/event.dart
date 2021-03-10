@@ -1,48 +1,66 @@
 part of '../store.dart';
 
-mixin _EventHolder {
-    Set<_StateKey> __emitters = {};
-    Map<_StateKey, Set<dynamic>> __listeners = {};
-    List<VoidCallback> __listenerRemovers = [];
+typedef Listener<T> = void Function(T);
 
-    void _addEmitter(_StateKey key) {
-        __emitters.add(key);
+class _EventHolder {
+    final Set<Type> __emitters = {};
+    final __holder = _MapHolder<dynamic>();
+    List<VoidCallback> __removers = [];
+
+    void _add<T extends SimpleState>() {
+        __emitters.add(T);
     }
 
-    bool _haveEmitter(_StateKey key) => __emitters.contains(key);
+    bool _has<T extends SimpleState>() => __emitters.contains(T);
 
-    VoidCallback __addListener<T extends SimpleState>(_StateKey<T> key, _Listener<T> listener) {
-        if (!__listeners.containsKey(key)) {
-            __listeners[key] = {};
-        }
-        __listeners[key].add(listener);
+    void _listenTo<T extends SimpleState>(_EventHolder owner, _StateKey<T> key, Listener<T> listener) {
+        __removers.add(owner.__holder.add(key, listener));
+    }
+
+    void emit<T extends SimpleState>(T t, {dynamic name}) {
+        __holder.forEach(_StateKey<T>(T, name), (e) => e(t));
+    }
+
+    void _dispose() {
+        __removers.forEach((e) => e());
+        __removers = [];
+
+        __holder.clear();
+        __emitters.clear();
+    }
+}
+
+typedef _Watcher = void Function(List<SimpleState>);
+
+class _WatchEntry {
+    final List<_StateKey> keys;
+    final _Watcher watcher;
+    _WatchEntry(this.keys, this.watcher);
+}
+
+class _StateWatcher {
+    final _StateHolder __store;
+    final __holder = _MapHolder<_WatchEntry>();
+
+    _StateWatcher(this.__store);
+
+    VoidCallback _watch(List<_StateKey> keys, _Watcher fn) {
+        final entry = _WatchEntry(keys, fn);
+        final removers = keys.map((e) => __holder.add(e, entry)).toList();
         return () {
-            if (!__listeners.containsKey(key)) return;
-            __listeners[key].remove(listener);
-            if (__listeners[key].isEmpty) {
-                __listeners.remove(key);
-            }
+            removers.forEach((e) => e());
         };
     }
 
-    void _listenTo<T extends SimpleState>(_EventHolder owner, _StateKey<T> key, _Listener<T> listener) {
-        __listenerRemovers.add(owner.__addListener(key, listener));
+    void _notify(Set<_StateKey> keys) {
+        if (keys.isEmpty) return;
+        __holder.collect(keys).forEach((entry) {
+            final values = entry.keys.map((e) => __store._get(e)).toList();
+            entry.watcher(values);
+        });
     }
 
-    void _disposeEvent() {
-        __listenerRemovers.forEach((e) => e());
-        __listenerRemovers = [];
-
-        __listeners.clear();
-        __emitters.clear();
-    }
-
-    @protected
-    void emit<T extends SimpleState>(T t, {dynamic name}) {
-        final key = _StateKey<T>(T, name);
-        final ls = __listeners[key];
-        if (ls == null || ls.isEmpty) return;
-        final cp = List.from(ls);
-        cp.forEach((e) => e(t));
+    void _dispose() {
+        __holder.clear();
     }
 }

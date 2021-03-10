@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:collection';
 
 import 'package:flutter/material.dart';
 import 'package:simple_store_base/simple_store_base.dart';
@@ -15,9 +14,15 @@ part './module/module.dart';
 part './module/app.dart';
 part './module/generated.dart';
 
-abstract class Store<T extends SimpleAction> with _Listenable<Set<_StateKey>>, _StateHolder, _EventHolder {
+abstract class Store<T extends SimpleAction> {
     Store __parent;
     Store __connectedStore;
+    _StateHolder _state;
+    final _event = _EventHolder();
+
+    Store() {
+        _state = _StateHolder(_tag, debug);
+    }
 
     Store connect(Store child) {
         Store c = child;
@@ -59,6 +64,11 @@ abstract class Store<T extends SimpleAction> with _Listenable<Set<_StateKey>>, _
     }
 
     @protected
+    void emit<T extends SimpleState>(T t, {dynamic name}) {
+        _event.emit<T>(t, name: name);
+    }
+
+    @protected
     void init(StoreInitializer init);
 
     @protected
@@ -91,8 +101,8 @@ abstract class Store<T extends SimpleAction> with _Listenable<Set<_StateKey>>, _
 
     Future<dynamic> _handle(StoreSetter set, SimpleAction action) async {
         if (_support(action)) {
-            final sub = set._sub(this);
-            final getter = StoreGetter._(this);
+            final sub = set._sub(this._state);
+            final getter = StoreGetter._(this._state);
             try {
                 return await handle(sub, getter, action);
             } finally {
@@ -108,19 +118,19 @@ abstract class Store<T extends SimpleAction> with _Listenable<Set<_StateKey>>, _
     }
 
     void __willDispose() {
-        _clearListeners();
-        _disposeEvent();
+        _state._watcher._dispose();
+        _event._dispose();
         __connectedStore?.__willDispose();
     }
 
     void __didDispose() {
-        final getter = StoreGetter._(this);
+        final getter = StoreGetter._(this._state);
         try {
             dispose(getter);
         } finally {
             getter._end();
         }
-        _disposeState();
+        _state._dispose();
         __connectedStore?.__didDispose();
     }
 

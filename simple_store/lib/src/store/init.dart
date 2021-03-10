@@ -19,7 +19,7 @@ class StoreInitializer with _Initializer {
     StoreSetter _setter;
 
     StoreInitializer._(this._owner) {
-        _setter = _root._sub(_owner);
+        _setter = _root._sub(_owner._state);
     }
 
     @override
@@ -31,27 +31,27 @@ class StoreInitializer with _Initializer {
     void state<T extends SimpleState>(T t, {dynamic name}) {
         _do(() {
             _State state = name == null ? _ValueState(t) : _NamedState.value(name, t);
-            _owner._add<T>(state);
+            _owner._state._add<T>(state);
         });
     }
 
     void namedState<T extends SimpleState>(NamedStateInitializer<T> initializer) {
         _do(() {
-            _owner._add<T>(_NamedState(initializer));
+            _owner._state._add<T>(_NamedState(initializer));
         });
     }
 
     void event<T extends SimpleState>() {
         _do(() {
-            _owner._addEmitter(_StateKey<T>(T, null));
+            _owner._event._add<T>();
         });
     }
 
     void ref<T extends SimpleState>({dynamic name}) {
         final key = _StateKey<T>(T, name);
         final result = __visiteParent((p) {
-            if (p._mayHaveState(key)) {
-                _owner._add<T>(p._createReference<T>(_owner, name));
+            if (p._state._mayHaveState(key)) {
+                _owner._state._add<T>(p._state._createReference<T>(_owner._state, name));
                 return true;
             }
         });
@@ -61,21 +61,20 @@ class StoreInitializer with _Initializer {
     void transform<T extends SimpleState>(Transformer<T> transformer, {dynamic name}) {
         final key = _StateKey<T>(T, name);
         final result = __visiteParent((p) {
-            if (p._mayHaveState(key)) {
-                final trans = _Transformer(_owner, transformer);
-                _owner.__trans[trans] = p._addTransformer<T>(key, trans, _setter);
+            if (p._state._mayHaveState(key)) {
+                final trans = _Transformer(_owner._state, transformer);
+                _owner._state.__trans[trans] = p._state._addTransformer<T>(key, trans, _setter);
                 return true;
             }
         });
         assert(result, '$T is not found in ${_owner._tag}');
     }
 
-    void listen<T extends SimpleState>({dynamic name, @required _Listener<T> listener}) {
-        final emitterKey = _StateKey<T>(T, null);
-        final listenerKey = _StateKey<T>(T, name);
+    void listen<T extends SimpleState>({dynamic name, @required Listener<T> listener}) {
+        final key = _StateKey<T>(T, name);
         final result = __visiteParent((p) {
-            if (p._haveEmitter(emitterKey)) {
-                _owner._listenTo(p, listenerKey, listener);
+            if (p._event._has<T>()) {
+                _owner._event._listenTo(p._event, key, listener);
                 return true;
             }
         });

@@ -31,7 +31,7 @@ abstract class _State {
 
     bool set(dynamic name, SimpleState state, StoreSetter set);
 
-    Set<Store> collect(dynamic name);
+    Set<_StateHolder> collect(dynamic name);
 
     VoidCallback addTransformer(dynamic name, _Transformer transformer);
 
@@ -54,7 +54,7 @@ abstract class _AbstractState extends _State {
         return references.add(reference);
     }
 
-    Set<Store> collect(dynamic name) {
+    Set<_StateHolder> collect(dynamic name) {
         return references.flat((item) => item.collect(name));
     }
 
@@ -97,7 +97,7 @@ abstract class _AbstractNamedState extends _AbstractState {
         return namedReferences.add(name, reference);
     }
 
-    Set<Store> collect(dynamic name) {
+    Set<_StateHolder> collect(dynamic name) {
         if (name == null) return super.collect(name);
         return namedReferences.flat(name, (item) => item.collect(name));
     }
@@ -237,9 +237,16 @@ class _NamedState extends _AbstractNamedState {
     }
 }
 
-mixin _StateHolder on _Listenable<Set<_StateKey>> {
+class _StateHolder {
+    _StateWatcher _watcher;
     Map<Type, _State> __state = {};
     Map<_Transformer, VoidCallback> __trans = {};
+    final String _tag;
+    final bool _debug;
+
+    _StateHolder(this._tag, this._debug) {
+        _watcher = _StateWatcher(this);
+    }
 
     T _get<T extends SimpleState>(_StateKey<T> key) {
         if (__state.containsKey(key.type)) {
@@ -248,12 +255,12 @@ mixin _StateHolder on _Listenable<Set<_StateKey>> {
                 return state;
             }
         }
-        assert(false, '$key is not found in ${(this as Store)._tag}');
+        assert(false, '$key is not found in $_tag');
         return null;
     }
 
-    Set<Store> _set<T extends SimpleState>(_StateKey<T> key, T t, StoreSetter set) {
-        assert(__state.containsKey(key.type), '$key is not found in ${(this as Store)._tag}');
+    Set<_StateHolder> _set<T extends SimpleState>(_StateKey<T> key, T t, StoreSetter set) {
+        assert(__state.containsKey(key.type), '$key is not found in $_tag');
         final success = __state[key.type].set(key.name, t, set);
         if (success) return __state[key.type].collect(key.name)..add(this);
         return {};
@@ -276,7 +283,7 @@ mixin _StateHolder on _Listenable<Set<_StateKey>> {
             return;
         }
 
-        assert(false, 'can not add state $T');
+        assert(false, 'can not add $state to $_tag');
     }
 
     // for init
@@ -286,8 +293,8 @@ mixin _StateHolder on _Listenable<Set<_StateKey>> {
         return __state[T].addTransformer(key.name, trans);
     }
 
-    Set<Store> _del<T extends SimpleState>(_StateKey<T> key) {
-        assert(__state.containsKey(key.type), '$key is not found in ${(this as Store)._tag}');
+    Set<_StateHolder> _del<T extends SimpleState>(_StateKey<T> key) {
+        assert(__state.containsKey(key.type), '$key is not found in $_tag');
         final state = __state[key.type];
         final changed = state.collect(key.name)..add(this);
 
@@ -308,7 +315,7 @@ mixin _StateHolder on _Listenable<Set<_StateKey>> {
         return __state[key.type].exists(key.name, false);
     }
 
-    _Reference _createReference<T extends SimpleState>(Store sub, dynamic name) {
+    _Reference _createReference<T extends SimpleState>(_StateHolder sub, dynamic name) {
         final state = __state[T];
         if (state is _AbstractNamedState) {
             return name == null ?
@@ -319,15 +326,14 @@ mixin _StateHolder on _Listenable<Set<_StateKey>> {
         return _ReferenceState<T>(state, sub);
     }
 
-    void _disposeState() {
+    void _dispose() {
         __trans.values.forEach((e) => e());
         __trans.clear();
 
         __state.values.forEach((e) {
             assert(() {
-                final store = this as Store;
-                if (store.debug) {
-                    print('${store._tag} dispose state $e');
+                if (_debug) {
+                    print('$_tag dispose state $e');
                 }
                 return true;
             }());
@@ -340,14 +346,14 @@ mixin _StateHolder on _Listenable<Set<_StateKey>> {
 class StoreSetter {
     final StoreSetter _parent;
     final _Initializer _init;
-    final Map<Store, Set<_StateKey>> _changed;
-    final Store _store;
+    final Map<_StateHolder, Set<_StateKey>> _changed;
+    final _StateHolder _store;
     final bool _isInit;
 
     StoreSetter._(this._isInit): _init = _Initializer(), _changed = {}, _store = null, _parent = null;
     StoreSetter.__forSub(this._isInit, this._init, this._changed, this._store, this._parent);
 
-    StoreSetter _sub(Store store) {
+    StoreSetter _sub(_StateHolder store) {
         return StoreSetter.__forSub(_isInit, _init, _changed, store, this);
     }
 
@@ -379,13 +385,12 @@ class StoreSetter {
 
         if (!_isInit) {
             _changed.entries.forEach((e) {
-                if (e.value.isEmpty) return;
-                e.key._notify(e.value);
+                e.key._watcher._notify(e.value);
             });
         }
     }
 
-    void _addChanged(Set<Store> stores, _StateKey key) {
+    void _addChanged(Set<_StateHolder> stores, _StateKey key) {
         stores.forEach((e) {
             if (!_changed.containsKey(e)) _changed[e] = {};
             _changed[e].add(key);

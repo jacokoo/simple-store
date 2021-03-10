@@ -111,37 +111,6 @@ class _SetValueAction extends SimpleAction {
     _SetValueAction(this.value);
 }
 
-
-typedef _Listener<T> = void Function(T);
-
-class _Entry<T> extends LinkedListEntry<_Entry<T>> {
-    final dynamic _listener;
-    _Entry(this._listener);
-}
-
-mixin _Listenable<T> {
-    final _listeners = LinkedList<_Entry>();
-
-    VoidCallback _listen(_Listener<T> fn) {
-        final entry = _Entry(fn);
-        _listeners.add(entry);
-        return () {
-            if (entry.list != null ) entry.unlink();
-        };
-    }
-
-    void _notify(T value) {
-        final list = List<_Entry>.from(_listeners);
-        for (final item in list) {
-            if (item.list != null) item._listener(value);
-        }
-    }
-
-    void _clearListeners() {
-        _listeners.clear();
-    }
-}
-
 class _Holder<T> {
     final Set<T> values = {};
 
@@ -201,5 +170,14 @@ class _MapHolder<T> {
 
     void all(void Function(T) fn) {
         Map.from(values).entries.forEach((e) => Set<T>.from(e.value).forEach((ee) => fn(ee)));
+    }
+
+    Set<T> collect(Iterable<dynamic> keys) => keys.fold({}, (acc, item) {
+        if (values.containsKey(item)) acc.addAll(values[item]);
+        return acc;
+    });
+
+    void clear() {
+        values.clear();
     }
 }

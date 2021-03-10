@@ -90,22 +90,18 @@ class _ModuleNode extends _ModuleState with _PageCollector {
 
     void init() {
         _store._init();
-        _listenerRemover = _moduleStore._listen((_) {
-            _changePages(_currentPages(), false);
+        _listenerRemover = _moduleStore._state._watcher._watch([_pageStateKey], (values) {
+            _changePages(List.from((values[0] as PageState)._stack), false);
         });
-        _changePages(_currentPages(), true);
+        _changePages(List.from(_moduleStore._state._get<PageState>(_pageStateKey)._stack), true);
     }
 
     Future<void> dispose() async {
+        print('${_store._tag} dispose !!!!!');
         _listenerRemover();
         _disposePages(_shownPages);
         _shownPages = [];
         _store._dispose();
-    }
-
-    List<SimplePage> _currentPages() {
-        final state = _moduleStore._get(_StateKey<PageState>(PageState, null));
-        return List.from(state._stack);
     }
 
     void _changePages(List<SimplePage> news, bool isInit) {
@@ -262,8 +258,8 @@ class __ModuleInnerWidgetState extends State<_ModuleInnerWidget> {
         if (widget._module.singleActive && !node.useBuilder) {
             final store = node._moduleStore;
 
-            remover = store._listen((_) {
-                final state = store._get(_pageStateKey);
+            remover = store._state._watcher._watch([_pageStateKey], (values) {
+                final state = values[0] as PageState;
                 assert(state._stack.isNotEmpty);
                 final c = state._stack[0];
                 if (c != current) {

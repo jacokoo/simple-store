@@ -2,7 +2,7 @@ part of '../store.dart';
 
 class _ReferenceState<T extends SimpleState> extends _AbstractState implements _Reference {
     final _State _referred;
-    final Store _store;
+    final _StateHolder _store;
     VoidCallback _remover;
     _ReferenceState(this._referred, this._store) {
         _remover = _referred.addReference(null, this);
@@ -21,7 +21,7 @@ class _ReferenceState<T extends SimpleState> extends _AbstractState implements _
     }
 
     @override
-    Set<Store> collect(dynamic name) {
+    Set<_StateHolder> collect(dynamic name) {
         return super.collect(name)..add(_store);
     }
 
@@ -49,7 +49,7 @@ class _ReferenceState<T extends SimpleState> extends _AbstractState implements _
 
 class _EntireReferenceState<T extends SimpleState> extends _AbstractNamedState implements _Reference {
     final _State _referred;
-    final Store _store;
+    final _StateHolder _store;
     VoidCallback _remover;
     _EntireReferenceState(this._store, this._referred): assert(_referred is _AbstractNamedState) {
         _remover = _referred.addReference(null, this);
@@ -84,7 +84,7 @@ class _EntireReferenceState<T extends SimpleState> extends _AbstractNamedState i
     }
 
     @override
-    Set<Store> collect(dynamic name) {
+    Set<_StateHolder> collect(dynamic name) {
         return super.collect(name)..add(_store);
     }
 
@@ -102,7 +102,7 @@ class _EntireReferenceState<T extends SimpleState> extends _AbstractNamedState i
 class _NamedReferenceState<T extends SimpleState> extends _AbstractNamedState implements _Reference {
     final Set<dynamic> _names = {};
     final _State _referred;
-    final Store _store;
+    final _StateHolder _store;
     final Map<dynamic, VoidCallback> _removers = {};
     _NamedReferenceState(this._store, dynamic name, this._referred):
         assert(name != null), assert(_referred is _AbstractNamedState) {
@@ -154,7 +154,7 @@ class _NamedReferenceState<T extends SimpleState> extends _AbstractNamedState im
     }
 
     @override
-    Set<Store> collect(dynamic name) {
+    Set<_StateHolder> collect(dynamic name) {
         if (!_names.contains(name)) return {};
         return super.collect(name)..add(_store);
     }
@@ -184,7 +184,7 @@ class TransformSetter {
 }
 
 class _Transformer {
-    final Store _store;
+    final _StateHolder _store;
     final dynamic _transformer;
     _Transformer(this._store, this._transformer);
 
