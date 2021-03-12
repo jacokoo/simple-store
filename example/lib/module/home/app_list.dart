@@ -1,7 +1,8 @@
-import 'package:example/module/home/home.dart';
-import 'package:example/module/home/store.dart';
 import 'package:flutter/material.dart';
 import 'package:simple_store/simple_store.dart';
+
+import 'home.dart';
+import 'store.dart';
 
 class AppListWidget extends StatelessWidget {
     @override
@@ -23,11 +24,18 @@ class AppListWidget extends StatelessWidget {
             )),
             Divider(height: 1, indent: 14),
             ListTile(
+                title: Text('No Generated Class Todo App'),
+                onTap: () {
+                    context.navTo(HomePages.noGenerateTodo());
+                },
+            ),
+            Divider(height: 1, indent: 14),
+            ListTile(
                 title: Text('Mounted Module'),
                 onTap: () {
                     context.navTo(HomePages.inside());
                 },
-            )
+            ),
         ],
     );
 

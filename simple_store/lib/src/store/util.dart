@@ -39,7 +39,7 @@ extension ContextDispatch on BuildContext {
 
 abstract class StateOnlyStore extends Store {
     @override
-    bool _support(SimpleAction action) => false;
+    bool support(SimpleAction action) => false;
 
     @override
     Future handle(StoreSetter set, StoreGetter get, SimpleAction action) {

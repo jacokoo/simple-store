@@ -1,6 +1,7 @@
 import 'package:built_collection/built_collection.dart';
-import 'package:example/module/home/store.dart';
 import 'package:simple_store/simple_store.dart';
+
+import '../home/store.dart';
 
 part 'store.g.dart';
 

@@ -12,7 +12,7 @@ class TodoHeader extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             child: Watch<TodoState>(builder: (ts) => Row(children: [
                 TextButton(onPressed: () {
-                    context.dispatch(TodoAction.toggleAll());
+                    context.dispatch(ActionToggleAllTodos());
                 }, child: Text('Toggle All')),
                 Spacer(),
                 filter(ts, 'All', FilterType.All, context),
@@ -27,7 +27,7 @@ class TodoHeader extends StatelessWidget {
             child: TextButton(
                 child: Text(name, style: TextStyle(color: ts.filter == type ? Colors.red : null)),
                 onPressed: () {
-                    context.dispatch(TodoAction.filter(type));
+                    context.dispatch(ActionFilterTodos(type));
                 },
             ),
         );

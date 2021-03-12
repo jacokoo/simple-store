@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:simple_store/simple_store.dart';
 
+import 'module.dart';
 import 'store.dart';
 
-class TodoEditor extends StatelessWidget {
+class TodoEditor extends TodoPage {
     final Todo todo;
     final TextEditingController controller;
     TodoEditor({this.todo}): controller = TextEditingController(text: todo?.name ?? '');
@@ -18,9 +19,9 @@ class TodoEditor extends StatelessWidget {
                     if (text.isEmpty) return;
 
                     if (todo == null) {
-                        context.dispatch(TodoAction.add(text));
+                        context.dispatch(ActionAddTodo(text));
                     } else {
-                        context.dispatch(TodoAction.changeName(todo.id, text));
+                        context.dispatch(ActionChangeName(todo.id, text));
                     }
                     Navigator.of(context).pop(text);
                 })],

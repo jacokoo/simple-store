@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:simple_store/simple_store.dart';
 
+import 'edit.dart';
 import 'store.dart';
-import 'todo.dart';
 
 class TodoContent extends StatelessWidget {
     @override
@@ -26,7 +26,7 @@ class TodoContent extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             child: Row(children: [
                 Checkbox(value: todo.completed, onChanged: (_) {
-                    context.dispatch(TodoAction.toggleComplete(todo.id));
+                    context.dispatch(ActionToggleCompleteTodo(todo.id));
                 }),
                 Text(todo.name, style: TextStyle(
                     fontSize: 20,
@@ -35,12 +35,12 @@ class TodoContent extends StatelessWidget {
                 )),
                 Spacer(),
                 IconButton(icon: Icon(Icons.update), onPressed: () async {
-                    final re = await context.navTo(TodoPages.edit(todo));
+                    final re = await context.navTo(TodoEditor(todo: todo));
                     print('navigate result $re');
                 }),
 
                 IconButton(icon: Icon(Icons.delete), onPressed: () {
-                    context.dispatch(TodoAction.del(todo.id));
+                    context.dispatch(ActionDeleteTodo(todo.id));
                 })
             ]),
         );

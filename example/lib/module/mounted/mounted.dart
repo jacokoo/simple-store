@@ -1,6 +1,7 @@
-import 'package:example/module/mounted/by_build_method/module.dart';
-import 'package:example/module/mounted/by_default_page/module.dart';
 import 'package:flutter/material.dart';
+
+import 'by_build_method/module.dart';
+import 'by_default_page/module.dart';
 
 class MountedWidget extends StatelessWidget {
 

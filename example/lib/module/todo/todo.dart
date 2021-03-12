@@ -1,8 +1,9 @@
-import 'package:example/module/todo/edit.dart';
-import 'package:example/module/todo/list.dart';
-import 'package:example/module/todo/store.dart';
 import 'package:flutter/material.dart';
 import 'package:simple_store/simple_store.dart';
+
+import 'edit.dart';
+import 'list.dart';
+import 'store.dart';
 
 part 'todo.g.dart';
 
