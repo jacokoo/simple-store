@@ -3,6 +3,7 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:simple_store_gen/src/base.dart';
 import 'package:simple_store_base/simple_store_base.dart';
+import 'package:simple_store_gen/src/state.dart';
 
 import 'base.dart';
 
@@ -69,17 +70,16 @@ Future<String> createConstructorClass(ConstructorInfo info, String parent, bool 
     if (ops.isNotEmpty) args.add('[$ops]');
 
     final t = haveGeneric ? (info.redirect.generics.first == 'void' ? '' : '<T>') : '';
-    final tss = info.params.map((e) => '${e.name}: \$${e.name}').join(', ');
     final name = haveName ? '\n@override\nString get generatedPageName => \'${info.name}\';\n' : '';
     return '''
     class ${info.redirect.name}$t extends $parent {
         ${fields.join('\n')}
         const ${info.redirect.name}(${args.join(',')}): super._();
         $name
-        @override
-        String toString() {
-            return '${parent}.${info.name}($tss)';
-        }
+
+        ${generateToString('${parent}.${info.name}', ts)}
+
+        ${generateEquals('${info.redirect.name}$t', ts)}
     }
     ''';
 }

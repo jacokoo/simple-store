@@ -29,4 +29,12 @@ class _Page extends MountedByBuildMethodPages {
   String toString() {
     return 'MountedByBuildMethodPages.page()';
   }
+
+  @override
+  bool operator ==(dynamic o) {
+    return identical(o, this) || (o is _Page);
+  }
+
+  @override
+  int get hashCode => runtimeType.hashCode;
 }

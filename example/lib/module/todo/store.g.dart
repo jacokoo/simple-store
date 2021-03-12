@@ -49,6 +49,14 @@ class _Add extends TodoAction {
   String toString() {
     return 'TodoAction.add(name: $name)';
   }
+
+  @override
+  bool operator ==(dynamic o) {
+    return identical(o, this) || (o is _Add && name == o.name);
+  }
+
+  @override
+  int get hashCode => hashValues(runtimeType, toHashValue(name));
 }
 
 class _Del extends TodoAction {
@@ -59,6 +67,14 @@ class _Del extends TodoAction {
   String toString() {
     return 'TodoAction.del(id: $id)';
   }
+
+  @override
+  bool operator ==(dynamic o) {
+    return identical(o, this) || (o is _Del && id == o.id);
+  }
+
+  @override
+  int get hashCode => hashValues(runtimeType, toHashValue(id));
 }
 
 class _ClearCompleted extends TodoAction {
@@ -68,6 +84,14 @@ class _ClearCompleted extends TodoAction {
   String toString() {
     return 'TodoAction.clearCompleted()';
   }
+
+  @override
+  bool operator ==(dynamic o) {
+    return identical(o, this) || (o is _ClearCompleted);
+  }
+
+  @override
+  int get hashCode => runtimeType.hashCode;
 }
 
 class _Filter extends TodoAction {
@@ -78,6 +102,14 @@ class _Filter extends TodoAction {
   String toString() {
     return 'TodoAction.filter(filter: $filter)';
   }
+
+  @override
+  bool operator ==(dynamic o) {
+    return identical(o, this) || (o is _Filter && filter == o.filter);
+  }
+
+  @override
+  int get hashCode => hashValues(runtimeType, toHashValue(filter));
 }
 
 class _ToggleComplete extends TodoAction {
@@ -88,6 +120,14 @@ class _ToggleComplete extends TodoAction {
   String toString() {
     return 'TodoAction.toggleComplete(id: $id)';
   }
+
+  @override
+  bool operator ==(dynamic o) {
+    return identical(o, this) || (o is _ToggleComplete && id == o.id);
+  }
+
+  @override
+  int get hashCode => hashValues(runtimeType, toHashValue(id));
 }
 
 class _ToggleAll extends TodoAction {
@@ -97,6 +137,14 @@ class _ToggleAll extends TodoAction {
   String toString() {
     return 'TodoAction.toggleAll()';
   }
+
+  @override
+  bool operator ==(dynamic o) {
+    return identical(o, this) || (o is _ToggleAll);
+  }
+
+  @override
+  int get hashCode => runtimeType.hashCode;
 }
 
 class _ChangeName extends TodoAction {
@@ -108,6 +156,16 @@ class _ChangeName extends TodoAction {
   String toString() {
     return 'TodoAction.changeName(id: $id, name: $name)';
   }
+
+  @override
+  bool operator ==(dynamic o) {
+    return identical(o, this) ||
+        (o is _ChangeName && id == o.id && name == o.name);
+  }
+
+  @override
+  int get hashCode =>
+      hashValues(runtimeType, toHashValue(id), toHashValue(name));
 }
 
 // **************************************************************************
@@ -160,7 +218,8 @@ class _TodoState extends TodoState {
   }
 
   @override
-  int get hashCode => hashValues(runtimeType, filter, todos);
+  int get hashCode =>
+      hashValues(runtimeType, toHashValue(filter), toHashValue(todos));
 }
 
 // **************************************************************************
@@ -213,5 +272,6 @@ class _Todo extends Todo {
   }
 
   @override
-  int get hashCode => hashValues(runtimeType, id, name, completed);
+  int get hashCode => hashValues(
+      runtimeType, toHashValue(id), toHashValue(name), toHashValue(completed));
 }

@@ -36,6 +36,14 @@ class _Home extends HomePages {
   String toString() {
     return 'HomePages.home()';
   }
+
+  @override
+  bool operator ==(dynamic o) {
+    return identical(o, this) || (o is _Home);
+  }
+
+  @override
+  int get hashCode => runtimeType.hashCode;
 }
 
 class _Todo extends HomePages {
@@ -49,6 +57,14 @@ class _Todo extends HomePages {
   String toString() {
     return 'HomePages.todo(todos: $todos)';
   }
+
+  @override
+  bool operator ==(dynamic o) {
+    return identical(o, this) || (o is _Todo && todos == o.todos);
+  }
+
+  @override
+  int get hashCode => hashValues(runtimeType, toHashValue(todos));
 }
 
 class _Inside extends HomePages {
@@ -61,4 +77,12 @@ class _Inside extends HomePages {
   String toString() {
     return 'HomePages.inside()';
   }
+
+  @override
+  bool operator ==(dynamic o) {
+    return identical(o, this) || (o is _Inside);
+  }
+
+  @override
+  int get hashCode => runtimeType.hashCode;
 }

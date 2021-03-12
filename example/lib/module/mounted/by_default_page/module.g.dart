@@ -36,6 +36,14 @@ class _Page extends MountedByDefaultPagePages {
   String toString() {
     return 'MountedByDefaultPagePages.page()';
   }
+
+  @override
+  bool operator ==(dynamic o) {
+    return identical(o, this) || (o is _Page);
+  }
+
+  @override
+  int get hashCode => runtimeType.hashCode;
 }
 
 class _Detail extends MountedByDefaultPagePages {
@@ -48,6 +56,14 @@ class _Detail extends MountedByDefaultPagePages {
   String toString() {
     return 'MountedByDefaultPagePages.detail()';
   }
+
+  @override
+  bool operator ==(dynamic o) {
+    return identical(o, this) || (o is _Detail);
+  }
+
+  @override
+  int get hashCode => runtimeType.hashCode;
 }
 
 class _Todo extends MountedByDefaultPagePages {
@@ -60,4 +76,12 @@ class _Todo extends MountedByDefaultPagePages {
   String toString() {
     return 'MountedByDefaultPagePages.todo()';
   }
+
+  @override
+  bool operator ==(dynamic o) {
+    return identical(o, this) || (o is _Todo);
+  }
+
+  @override
+  int get hashCode => runtimeType.hashCode;
 }

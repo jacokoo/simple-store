@@ -36,6 +36,14 @@ class _ListPage extends TodoPages {
   String toString() {
     return 'TodoPages.list()';
   }
+
+  @override
+  bool operator ==(dynamic o) {
+    return identical(o, this) || (o is _ListPage);
+  }
+
+  @override
+  int get hashCode => runtimeType.hashCode;
 }
 
 class _AddPage extends TodoPages {
@@ -48,6 +56,14 @@ class _AddPage extends TodoPages {
   String toString() {
     return 'TodoPages.add()';
   }
+
+  @override
+  bool operator ==(dynamic o) {
+    return identical(o, this) || (o is _AddPage);
+  }
+
+  @override
+  int get hashCode => runtimeType.hashCode;
 }
 
 class _EditPage extends TodoPages {
@@ -61,4 +77,12 @@ class _EditPage extends TodoPages {
   String toString() {
     return 'TodoPages.edit(todo: $todo)';
   }
+
+  @override
+  bool operator ==(dynamic o) {
+    return identical(o, this) || (o is _EditPage && todo == o.todo);
+  }
+
+  @override
+  int get hashCode => hashValues(runtimeType, toHashValue(todo));
 }

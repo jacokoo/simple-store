@@ -39,10 +39,6 @@ abstract class ValueObjectGenerator<T> extends BaseGenerator<T> {
 
         final cps = params.map((e) => 'Object ${e.name} = UNSET').join(', ');
         final sts = params.map((e) => '${e.name} == UNSET ? _${e.name} : ${e.name} as ${e.type}').join(',\n');
-        final tss = params.map((e) => '${e.name}: \$${e.name}').join(', ');
-
-        final equals = params.map((e) => '${e.name} == o.${e.name}').join(' && ');
-        final hash = params.map((e) => e.name).join(', ');
 
         final cfs = fes.map((e) => '${e.type} _${e.name};').join('\n');
         final caches = fes.map((e) => '''
@@ -68,18 +64,9 @@ abstract class ValueObjectGenerator<T> extends BaseGenerator<T> {
                 return _$name($sts);
             }
 
-            @override
-            String toString() {
-                return '$name($tss)';
-            }
+            ${generateToString(name, params)}
 
-            @override
-            bool operator ==(dynamic o) {
-                return identical(o, this) || (o is _$name${equals.isEmpty ? '' : ' && '}$equals);
-            }
-
-            @override
-            int get hashCode => hashValues(runtimeType${hash.isEmpty ? '' : ', '}$hash);
+            ${generateEquals('_$name', params)}
         }
         ''';
     }
@@ -101,4 +88,30 @@ class StateGenerator extends ValueObjectGenerator<StateAnnotation> {
         e.ensure(params.length == c.parameters.length, 'state constructor can not have optional or named parameters');
         return params;
     }
+}
+
+String generateEquals(String className, List<TypedItem> params) {
+    final equals = params.map((e) => '${e.name} == o.${e.name}').join(' && ');
+    var hash = params.map((e) => 'toHashValue(${e.name})').join(', ');
+    hash = hash.isEmpty ? 'runtimeType.hashCode' : 'hashValues(runtimeType, $hash)';
+    return '''
+    @override
+    bool operator ==(dynamic o) {
+        return identical(o, this) || (o is $className${equals.isEmpty ? '' : ' && '}$equals);
+    }
+
+    @override
+    int get hashCode => $hash;
+    ''';
+}
+
+String generateToString(String className, List<TypedItem> params) {
+    final tss = params.map((e) => '${e.name}: \$${e.name}').join(', ');
+
+    return '''
+    @override
+    String toString() {
+        return '$className($tss)';
+    }
+    ''';
 }

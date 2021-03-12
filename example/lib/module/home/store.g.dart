@@ -28,6 +28,14 @@ class _StoreTodos extends HomeAction {
   String toString() {
     return 'HomeAction.storeTodos(todos: $todos)';
   }
+
+  @override
+  bool operator ==(dynamic o) {
+    return identical(o, this) || (o is _StoreTodos && todos == o.todos);
+  }
+
+  @override
+  int get hashCode => hashValues(runtimeType, toHashValue(todos));
 }
 
 // **************************************************************************
@@ -65,5 +73,5 @@ class _TodoStorageState extends TodoStorageState {
   }
 
   @override
-  int get hashCode => hashValues(runtimeType, todos);
+  int get hashCode => hashValues(runtimeType, toHashValue(todos));
 }
