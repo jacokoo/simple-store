@@ -238,6 +238,7 @@ class _NamedState extends _AbstractNamedState {
 }
 
 class _StateHolder {
+    bool __disposed = false;
     _StateWatcher _watcher;
     Map<Type, _State> __state = {};
     Map<_Transformer, VoidCallback> __trans = {};
@@ -260,6 +261,8 @@ class _StateHolder {
     }
 
     Set<_StateHolder> _set<T extends SimpleState>(_StateKey<T> key, T t, StoreSetter set) {
+        if (__disposed) return {};
+
         assert(__state.containsKey(key.type), '$key is not found in $_tag');
         final success = __state[key.type].set(key.name, t, set);
         if (success) return __state[key.type].collect(key.name)..add(this);
@@ -340,6 +343,7 @@ class _StateHolder {
             e.delete(null);
         });
         __state.clear();
+        __disposed = true;
     }
 }
 

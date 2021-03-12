@@ -25,7 +25,7 @@ class _StatelessElement extends ProxyElement {
 
 extension ContextDispatch on BuildContext {
     Future<dynamic> dispatch(SimpleAction action) {
-        return Store._of(this, true).dispatch(null, action);
+        return _StoreApi.of(this, true).dispatch(action);
     }
 
     Future<dynamic> navTo<T extends SimplePage>(T page) {

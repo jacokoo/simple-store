@@ -1,22 +1,20 @@
 part of '../store.dart';
 
-mixin StoreCreator {
-    Store createStore();
-}
-
-abstract class Component extends _StatelessWidget with StoreCreator {
+abstract class Component extends _StatelessWidget {
     final Key key;
     Component({this.key}): super(key: key);
+
+    Store createStore();
 
     Widget build(BuildContext context);
 
     @override
     Widget onBuild(BuildContext context) {
-        return _StoreWidget(Store._of(context, false), this, build);
+        return _StoreWidget(_StoreApi.of(context, false), createStore, build);
     }
 }
 
-abstract class ValueComponent<T> extends _StatelessWidget with StoreCreator {
+abstract class ValueComponent<T> extends _StatelessWidget {
     final T _initialValue;
     final _StoreAware _aware = _StoreAware();
     ValueComponent({T intialValue, Key key}): _initialValue = intialValue, super(key: key);
@@ -25,14 +23,10 @@ abstract class ValueComponent<T> extends _StatelessWidget with StoreCreator {
 
     @override
     @nonVirtual
-    Store createStore() {
-        return _ValueStore<T>(initialValue: _initialValue, initializer: init);
-    }
-
-    @override
-    @nonVirtual
     Widget onBuild(BuildContext context) {
-        return _StoreWidget(Store._of(context, false), this, build, _aware);
+        return _StoreWidget(_StoreApi.of(context, false), () {
+            return _ValueStore<T>(initialValue: _initialValue, initializer: init);
+        }, build, _aware);
     }
 
     Widget build(BuildContext context);
@@ -42,7 +36,7 @@ abstract class ValueComponent<T> extends _StatelessWidget with StoreCreator {
     }
 
     Future<dynamic> set(T t) {
-        return _aware((store) => store.dispatch(null, _SetValueAction(t)));
+        return _aware((store) => store.dispatch(_SetValueAction(t)));
     }
 }
 
@@ -97,7 +91,7 @@ class Get5<T extends SimpleState, T2 extends SimpleState, T3 extends SimpleState
 }
 
 class _StoreInheritedWidget extends InheritedWidget {
-    final Store store;
+    final _StoreApi store;
     _StoreInheritedWidget({this.store, WidgetBuilder child}): super(child: Builder(builder: child));
 
     @override
@@ -107,16 +101,16 @@ class _StoreInheritedWidget extends InheritedWidget {
 }
 
 class _StoreAware {
-    Store _store;
+    _StoreApi _store;
 
-    dynamic call(dynamic Function(Store) fn) {
+    dynamic call(dynamic Function(_StoreApi) fn) {
         assert(_store != null);
         return fn(_store);
     }
 }
 
 class _StoreWidget<T extends SimpleAction> extends StatefulWidget {
-    final Store parent;
+    final _StoreApi parent;
     final WidgetBuilder child;
     final StoreCreator creator;
     final _StoreAware aware;
@@ -127,14 +121,14 @@ class _StoreWidget<T extends SimpleAction> extends StatefulWidget {
 }
 
 class __StoreWidgetState extends State<_StoreWidget> {
-    Store store;
+    _StoreApi store;
     @override
     void initState() {
         super.initState();
 
-        store = widget.creator.createStore();
-        store._parent = widget.parent;
-        store._init();
+        store = _StoreApi(widget.creator);
+        store.setParent(widget.parent);
+        store.init();
 
         widget.aware?._store = store;
     }
@@ -147,13 +141,13 @@ class __StoreWidgetState extends State<_StoreWidget> {
     @override
     void dispose() {
         widget.aware?._store = null;
-        store._dispose();
+        store.dispose();
         super.dispose();
     }
 }
 
 class _InnerStoreWidget extends StatefulWidget {
-    final Store store;
+    final _StoreApi store;
     final Widget Function(List<dynamic>) builder;
     final List<_StateKey> watchedKeys;
     _InnerStoreWidget(this.store, this.builder, this.watchedKeys);
@@ -171,7 +165,8 @@ class __InnerStoreWidgetState extends State<_InnerStoreWidget> {
         super.initState();
 
         if (widget.watchedKeys.isNotEmpty) {
-            remover = widget.store._state._watcher._watch(widget.watchedKeys, (data) {
+            remover = widget.store.watch(widget.watchedKeys, (data) {
+                if (!mounted) return;
                 setState(() => values = data);
             });
         }
@@ -185,7 +180,7 @@ class __InnerStoreWidgetState extends State<_InnerStoreWidget> {
 
     @override
     Widget build(BuildContext context) {
-        if (values == null) values = widget.watchedKeys.map((it) => widget.store._state._get(it)).toList();
+        if (values == null) values = widget.store.get(widget.watchedKeys);
         return widget.builder(values);
     }
 
@@ -204,7 +199,7 @@ class _Watch extends StatelessWidget {
 
     @override
     Widget build(BuildContext context) {
-        return _InnerStoreWidget(Store._of(context, true), builder, watchedKeys);
+        return _InnerStoreWidget(_StoreApi.of(context, true), builder, watchedKeys);
     }
 }
 
@@ -223,8 +218,8 @@ class _GetState extends State<_Get> {
     @override
     Widget build(BuildContext context) {
         if (values == null) {
-            final store = Store._of(context, true);
-            values = widget.watchedKeys.map((e) => store._state._get(e)).toList();
+            final store = _StoreApi.of(context, true);
+            values = store.get(widget.watchedKeys);
         }
         return widget.builder(values);
     }

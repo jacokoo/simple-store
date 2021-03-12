@@ -41,22 +41,12 @@ abstract class Store<T extends SimpleAction> {
         if (set != null) {
             return _handle(set, action);
         }
-        assert(() {
-            if (debug) print('$_tag start dispatch $action');
-            return true;
-        }());
 
         set = StoreSetter._(false);
         return _handle(set, action)
             .then((value) {
                 set._end();
                 return value;
-            })
-            .whenComplete(() {
-                assert(() {
-                    if (debug) print('$_tag dispatch $action end');
-                    return true;
-                }());
             })
             .catchError((e, st) {
                 onError(action, e, st);
@@ -86,6 +76,9 @@ abstract class Store<T extends SimpleAction> {
         throw e;
     }
 
+    @protected
+    bool support(SimpleAction action) => action is T;
+
     set _parent (Store parent) {
         if (__connectedStore != null) {
             __connectedStore._parent = parent;
@@ -96,11 +89,8 @@ abstract class Store<T extends SimpleAction> {
 
     Store get _parent => __parent;
 
-
-    bool _support(SimpleAction action) => action is T;
-
     Future<dynamic> _handle(StoreSetter set, SimpleAction action) async {
-        if (_support(action)) {
+        if (support(action)) {
             final sub = set._sub(this._state);
             final getter = StoreGetter._(this._state);
             try {
@@ -135,10 +125,6 @@ abstract class Store<T extends SimpleAction> {
     }
 
     void _dispose() {
-        assert(() {
-            if (debug) print('$_tag will dispose');
-            return true;
-        }());
         this.__willDispose();
         this.__didDispose();
     }
@@ -148,17 +134,69 @@ abstract class Store<T extends SimpleAction> {
         final initializer = StoreInitializer._(this);
         init(initializer);
         initializer._end();
+    }
+
+    String get _tag => '$runtimeType';
+}
+
+typedef StoreCreator = Store Function();
+
+class _StoreApi {
+    final Store store;
+    _StoreApi(StoreCreator creator): store = creator();
+
+    void setParent(_StoreApi parent) {
+        if (parent == null) return;
+        store._parent = parent.store;
+    }
+
+    _StoreApi connect(_StoreApi child) {
+        store.connect(child.store);
+        return child;
+    }
+
+    void init() {
+        store._init();
         assert(() {
-            if (debug) print('$_tag inited');
+            if (store.debug) print('${store._tag} inited');
             return true;
         }());
     }
 
-    static Store _of(BuildContext context, bool required) {
+    void dispose() {
+        assert(() {
+            if (store.debug) print('${store._tag} will dispose');
+            return true;
+        }());
+        store._dispose();
+    }
+
+    VoidCallback watch(List<_StateKey> keys, _Watcher watcher) {
+        return store._state._watcher._watch(keys, watcher);
+    }
+
+    Future<dynamic> dispatch(SimpleAction action) {
+        assert(() {
+            if (store.debug) print('${store._tag} start dispatch $action');
+            return true;
+        }());
+        final result = store.dispatch(null, action);
+        assert(() {
+            result.whenComplete(() {
+                if (store.debug) print('${store._tag} dispatch $action end');
+            });
+            return true;
+        }());
+        return result;
+    }
+
+    List<SimpleState> get(List<_StateKey> keys) {
+        return keys.map((e) => store._state._get(e)).toList();
+    }
+
+    static _StoreApi of(BuildContext context, bool required) {
         final s = context.findAncestorWidgetOfExactType<_StoreInheritedWidget>()?.store;
         assert(!required || s != null, 'Can not find a store from ancestors.');
         return s;
     }
-
-    String get _tag => '$runtimeType';
 }
