@@ -20,6 +20,7 @@ abstract class Module<T extends SimplePage> extends _StatelessWidget {
     }
 
     bool support(SimplePage page) => page is T;
+    bool isSamePage(T t1, T t2) => t1 == t2;
 
     @override
     @nonVirtual
@@ -87,7 +88,7 @@ class _ModuleNode extends _ModuleState with _PageCollector {
 
     VoidCallback _listenerRemover;
     List<SimplePage> _shownPages = [];
-    Map<SimplePage, dynamic> _shownWidgets = {};
+    List<dynamic> _shownWidgets = [];
 
     _ModuleNode(_PageCollector collector, this._module, _StoreApi parent, this._mounted) {
         _moduleStore = _StoreApi(_module._createModuleStore(_mounted));
@@ -109,7 +110,7 @@ class _ModuleNode extends _ModuleState with _PageCollector {
 
     Future<void> dispose() async {
         _listenerRemover();
-        _disposePages(_shownPages);
+        _disposePages(0);
         _shownPages = [];
         _store.dispose();
     }
@@ -117,19 +118,17 @@ class _ModuleNode extends _ModuleState with _PageCollector {
     void _changePages(List<SimplePage> news, bool isInit) {
         int i = 0;
         for (; i < news.length && i < _shownPages.length; i ++) {
-            if (news[i] != _shownPages[i]) {
+            if (!_module.isSamePage(news[i], _shownPages[i])) {
                 break;
             }
         }
 
-        print('$news $_shownPages $i');
-
         if (i == _shownPages.length) {
             _createPages(news.sublist(i));
         } else if (i == news.length) {
-            _disposePages(_shownPages.sublist(i));
+            _disposePages(i);
         } else {
-            _disposePages(_shownPages.sublist(i));
+            _disposePages(i);
             _createPages(news.sublist(i));
         }
         _shownPages = news;
@@ -142,17 +141,19 @@ class _ModuleNode extends _ModuleState with _PageCollector {
 
     void _createPages(List<SimplePage> pages) {
         pages.forEach((e) {
-            _shownWidgets[e] = _createPage(_module.buildPage(e), e);
+            _shownPages.add(e);
+            _shownWidgets.add(_createPage(_module.buildPage(e), e));
         });
     }
 
-    void _disposePages(List<SimplePage> pages) {
-        pages.forEach((e) {
-            final w = _shownWidgets.remove(e);
+    void _disposePages(int idx) {
+        for (var i = _shownPages.length - 1; i >= idx; i --) {
+            _shownPages.removeLast();
+            final w = _shownWidgets.removeLast();
             if (w is _ModuleNode) {
                 w.dispose();
             }
-        });
+        }
     }
 
     ValueKey _pageKey(SimplePage page) {
@@ -201,8 +202,7 @@ class _ModuleNode extends _ModuleState with _PageCollector {
     @override
     List<Page> pages() {
         final re = <Page>[];
-        _shownPages.forEach((e) {
-            final w = _shownWidgets[e];
+        _shownWidgets.forEach((w) {
             assert(w != null);
             if (w is! _ModuleNode) {
                 re.add(w);
@@ -274,7 +274,7 @@ class __ModuleInnerWidgetState extends State<_ModuleInnerWidget> {
                 final state = values[0] as PageState;
                 assert(state._stack.isNotEmpty);
                 final c = state._stack[0];
-                if (c != current) {
+                if (!widget._module.isSamePage(c, current)) {
                     setState(() { current = c; });
                 }
             });
@@ -312,8 +312,8 @@ class _NavigateResult {
 
 final _pageStateKey = _StateKey<PageState>(PageState, null);
 
-class _ModuleStore extends Store<_NavigateAction> {
-    final Module _module;
+class _ModuleStore<T extends SimplePage> extends Store<_NavigateAction> {
+    final Module<T> _module;
     final dynamic _initialPage;
     final int _maxStackSize;
     final int _minStackSize;
@@ -329,8 +329,8 @@ class _ModuleStore extends Store<_NavigateAction> {
             }
 
             final state = get<PageState>();
-            if (state.current == p.page) {
-                return null;
+            if (_module.isSamePage(state.current, p.page)) {
+                return;
             }
 
             var stack = List<SimplePage>.from(state._stack);
