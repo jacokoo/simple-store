@@ -8,6 +8,10 @@ import 'header.dart';
 import 'module.dart';
 
 class TodoListPage extends TodoPage {
+
+    @override
+    String get pageName => 'list';
+
     @override
     Widget build(BuildContext context) {
         return Scaffold(
@@ -25,12 +29,4 @@ class TodoListPage extends TodoPage {
             ]), color: Colors.grey.shade200)),
         );
     }
-
-    @override
-    bool operator ==(dynamic o) {
-        return identical(o, this) || (o is TodoListPage);
-    }
-
-    @override
-    int get hashCode => runtimeType.hashCode;
 }

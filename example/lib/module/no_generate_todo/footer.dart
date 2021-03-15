@@ -16,7 +16,7 @@ class TodoFooter extends StatelessWidget {
                     Text('$count ${count == 1 ? 'item' : 'items'} left'),
                     Spacer(),
                     TextButton(onPressed: () {
-                        context.dispatch(ActionClearCompletedTodos());
+                        context.dispatch(TodoAction.clearCompleted());
                     }, child: Text('Clear Completed'))
                 ]);
             }),

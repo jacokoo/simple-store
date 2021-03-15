@@ -1,7 +1,8 @@
-import 'package:example/module/mounted/by_default_page/detail.dart';
-import 'package:example/module/todo/todo.dart';
 import 'package:flutter/material.dart';
 import 'package:simple_store/simple_store.dart';
+
+import '../../todo/todo.dart';
+import 'detail.dart';
 
 part 'module.g.dart';
 

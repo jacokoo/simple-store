@@ -1,7 +1,17 @@
 import 'package:built_collection/built_collection.dart';
 import 'package:simple_store/simple_store.dart';
 
-abstract class TodoAction extends CommonAction {}
+abstract class TodoAction extends CommonAction {
+    TodoAction();
+
+    factory TodoAction.add(String name) = _ActionAddTodo;
+    factory TodoAction.del(int id) = _ActionDeleteTodo;
+    factory TodoAction.clearCompleted() = _ActionClearCompleted;
+    factory TodoAction.filter(FilterType filter) = _ActionFilterTodos;
+    factory TodoAction.toggleComplete(int id) = _ActionToggleComplete;
+    factory TodoAction.toggleAll() = _ActionToggleAll;
+    factory TodoAction.changeName(int id, String name) = _ActionChangeName;
+}
 
 class TodoStore extends CommonStore {
     @override
@@ -36,9 +46,9 @@ class TodoState implements SimpleState {
 
 int _id = 0;
 
-class ActionAddTodo extends TodoAction {
+class _ActionAddTodo extends TodoAction {
     final String name;
-    ActionAddTodo(this.name);
+    _ActionAddTodo(this.name);
 
     @override
     Future handle(StoreSetter set, StoreGetter get) async {
@@ -49,9 +59,9 @@ class ActionAddTodo extends TodoAction {
     }
 }
 
-class ActionDeleteTodo extends TodoAction {
+class _ActionDeleteTodo extends TodoAction {
     final int id;
-    ActionDeleteTodo(this.id);
+    _ActionDeleteTodo(this.id);
 
     @override
     Future handle(StoreSetter set, StoreGetter get) async {
@@ -61,7 +71,7 @@ class ActionDeleteTodo extends TodoAction {
     }
 }
 
-class ActionClearCompletedTodos extends TodoAction {
+class _ActionClearCompleted extends TodoAction {
     @override
     Future handle(StoreSetter set, StoreGetter get) async {
         final state = get<TodoState>();
@@ -70,9 +80,9 @@ class ActionClearCompletedTodos extends TodoAction {
     }
 }
 
-class ActionFilterTodos extends TodoAction {
+class _ActionFilterTodos extends TodoAction {
     final FilterType filter;
-    ActionFilterTodos(this.filter);
+    _ActionFilterTodos(this.filter);
 
     @override
     Future handle(StoreSetter set, StoreGetter get) async {
@@ -81,9 +91,9 @@ class ActionFilterTodos extends TodoAction {
     }
 }
 
-class ActionToggleCompleteTodo extends TodoAction {
+class _ActionToggleComplete extends TodoAction {
     final int id;
-    ActionToggleCompleteTodo(this.id);
+    _ActionToggleComplete(this.id);
 
     @override
     Future handle(StoreSetter set, StoreGetter get) async {
@@ -98,7 +108,7 @@ class ActionToggleCompleteTodo extends TodoAction {
     }
 }
 
-class ActionToggleAllTodos extends TodoAction {
+class _ActionToggleAll extends TodoAction {
     @override
     Future handle(StoreSetter set, StoreGetter get) async {
         final state = get<TodoState>();
@@ -107,10 +117,10 @@ class ActionToggleAllTodos extends TodoAction {
     }
 }
 
-class ActionChangeName extends TodoAction {
+class _ActionChangeName extends TodoAction {
     final int id;
     final String name;
-    ActionChangeName(this.id, this.name);
+    _ActionChangeName(this.id, this.name);
 
     @override
     Future handle(StoreSetter set, StoreGetter get) async {

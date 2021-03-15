@@ -10,6 +10,9 @@ class TodoEditor extends TodoPage {
     TodoEditor({this.todo}): controller = TextEditingController(text: todo?.name ?? '');
 
     @override
+    String get pageName => todo == null ? 'add' : 'edit';
+
+    @override
     Widget build(BuildContext context) {
         return Scaffold(
             appBar: AppBar(
@@ -19,9 +22,9 @@ class TodoEditor extends TodoPage {
                     if (text.isEmpty) return;
 
                     if (todo == null) {
-                        context.dispatch(ActionAddTodo(text));
+                        context.dispatch(TodoAction.add(text));
                     } else {
-                        context.dispatch(ActionChangeName(todo.id, text));
+                        context.dispatch(TodoAction.changeName(todo.id, text));
                     }
                     Navigator.of(context).pop(text);
                 })],

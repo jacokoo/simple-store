@@ -26,7 +26,7 @@ class TodoContent extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             child: Row(children: [
                 Checkbox(value: todo.completed, onChanged: (_) {
-                    context.dispatch(ActionToggleCompleteTodo(todo.id));
+                    context.dispatch(TodoAction.toggleComplete(todo.id));
                 }),
                 Text(todo.name, style: TextStyle(
                     fontSize: 20,
@@ -40,7 +40,7 @@ class TodoContent extends StatelessWidget {
                 }),
 
                 IconButton(icon: Icon(Icons.delete), onPressed: () {
-                    context.dispatch(ActionDeleteTodo(todo.id));
+                    context.dispatch(TodoAction.del(todo.id));
                 })
             ]),
         );

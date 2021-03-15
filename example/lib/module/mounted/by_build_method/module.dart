@@ -1,6 +1,7 @@
-import 'package:example/module/mounted/by_build_method/detail.dart';
 import 'package:flutter/material.dart';
 import 'package:simple_store/simple_store.dart';
+
+import 'detail.dart';
 
 part 'module.g.dart';
 
