@@ -1,15 +1,13 @@
 part of '../store.dart';
 
 /// Module holds a `Store` and create pages.
-abstract class Module<T extends SimplePage> extends _StatelessWidget {
+abstract class Module<T extends SimplePage> extends _StatelessWidget with _StoreCreator<Module<T>> {
     /// The default page to show.
     T get defaultPage;
 
     /// Indicate only one page could be shown at one time.
     /// when navigate to a page, it will replace the previous one.
     bool get singleActive => false;
-
-    Store createStore();
 
     /// Build page content for the specified page
     Widget buildPage(T page);
@@ -38,7 +36,7 @@ abstract class Module<T extends SimplePage> extends _StatelessWidget {
 
     bool _allowEmpty(bool mounted) => mounted && this is ModuleBuilder;
 
-    StoreCreator _createModuleStore(bool mounted) => () => _ModuleStore(
+    Store Function() _createModuleStore(bool mounted) => () => _ModuleStore(
         this,
         defaultPage,
         singleActive ? 1 : 2,
@@ -296,6 +294,12 @@ class __ModuleInnerWidgetState extends State<_ModuleInnerWidget> {
             }
             return widget._module.buildPage(current);
         }));
+    }
+
+    @override
+    void didUpdateWidget(_ModuleInnerWidget old) {
+        super.didUpdateWidget(old);
+        widget._module.didUpdateWidget(old._module, (SimpleAction action) => node._store.dispatch(action));
     }
 }
 

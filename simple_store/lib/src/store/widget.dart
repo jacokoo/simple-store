@@ -1,32 +1,35 @@
 part of '../store.dart';
 
-abstract class Component extends _StatelessWidget {
+mixin _StoreCreator<T extends _StoreCreator<T>> {
+    Store createStore();
+    void didUpdateWidget(covariant T old, Dispatcher dispatch) {}
+}
+
+abstract class Component<T extends Component<T>> extends _StatelessWidget with _StoreCreator<T> {
     final Key key;
     Component({this.key}): super(key: key);
-
-    Store createStore();
 
     Widget build(BuildContext context);
 
     @override
     Widget onBuild(BuildContext context) {
-        return _StoreWidget(_StoreApi.of(context, false), createStore, build);
+        return _StoreWidget(_StoreApi.of(context, false), this, build);
     }
 }
 
-abstract class ValueComponent<T> extends _StatelessWidget {
+abstract class ValueComponent<T> extends _StatelessWidget with _StoreCreator<ValueComponent<T>> {
     final T _initialValue;
     final _StoreAware _aware = _StoreAware();
     ValueComponent({T intialValue, Key key}): _initialValue = intialValue, super(key: key);
 
     void init(ReferenceCreator init) {}
 
+    createStore() => _ValueStore<T>(initialValue: _initialValue, initializer: init);
+
     @override
     @nonVirtual
     Widget onBuild(BuildContext context) {
-        return _StoreWidget(_StoreApi.of(context, false), () {
-            return _ValueStore<T>(initialValue: _initialValue, initializer: init);
-        }, build, _aware);
+        return _StoreWidget(_StoreApi.of(context, false), this, build, _aware);
     }
 
     Widget build(BuildContext context);
@@ -112,7 +115,7 @@ class _StoreAware {
 class _StoreWidget<T extends SimpleAction> extends StatefulWidget {
     final _StoreApi parent;
     final WidgetBuilder child;
-    final StoreCreator creator;
+    final _StoreCreator creator;
     final _StoreAware aware;
     _StoreWidget(this.parent, this.creator, this.child, [this.aware]);
 
@@ -126,7 +129,7 @@ class __StoreWidgetState extends State<_StoreWidget> {
     void initState() {
         super.initState();
 
-        store = _StoreApi(widget.creator);
+        store = _StoreApi(widget.creator.createStore);
         store.setParent(widget.parent);
         store.init();
 
@@ -143,6 +146,12 @@ class __StoreWidgetState extends State<_StoreWidget> {
         widget.aware?._store = null;
         store.dispose();
         super.dispose();
+    }
+
+    @override
+    void didUpdateWidget(_StoreWidget old) {
+        super.didUpdateWidget(old);
+        widget.creator.didUpdateWidget(old.creator, (SimpleAction action) => store.dispatch(action));
     }
 }
 

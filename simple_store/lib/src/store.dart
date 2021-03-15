@@ -139,11 +139,9 @@ abstract class Store<T extends SimpleAction> {
     String get _tag => '$runtimeType';
 }
 
-typedef StoreCreator = Store Function();
-
 class _StoreApi {
     final Store store;
-    _StoreApi(StoreCreator creator): store = creator();
+    _StoreApi(Store Function() creator): store = creator();
 
     void setParent(_StoreApi parent) {
         if (parent == null) return;
