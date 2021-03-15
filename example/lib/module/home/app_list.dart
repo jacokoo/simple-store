@@ -24,7 +24,7 @@ class AppListWidget extends StatelessWidget {
             )),
             Divider(height: 1, indent: 14),
             ListTile(
-                title: Text('No Generated Class Todo App'),
+                title: Text('Todo App - No Generated Code'),
                 onTap: () {
                     context.navTo(HomePages.noGenerateTodo());
                 },
@@ -36,7 +36,29 @@ class AppListWidget extends StatelessWidget {
                     context.navTo(HomePages.inside());
                 },
             ),
+            Divider(height: 1, indent: 14),
+            ListTile(
+                title: Text('Did Update Widget Demo - Component'),
+                onTap: () {
+                    context.navTo(HomePages.didUpdate());
+                },
+            ),
+            Divider(height: 1, indent: 14),
+            ListTile(
+                title: Text('Did Update Widget Demo - Module'),
+                subtitle: Text('Use default page'),
+                onTap: () {
+                    context.navTo(HomePages.didUpdateModule());
+                },
+            ),
+            Divider(height: 1, indent: 14),
+            ListTile(
+                title: Text('Did Update Widget Demo - Module'),
+                subtitle: Text('Use ModuleBuilder'),
+                onTap: () {
+                    context.navTo(HomePages.didUpdateModuleBuilder());
+                },
+            ),
         ],
     );
-
 }

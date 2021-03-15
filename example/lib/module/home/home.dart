@@ -2,6 +2,7 @@ import 'package:built_collection/built_collection.dart';
 import 'package:flutter/material.dart';
 import 'package:simple_store/simple_store.dart';
 
+import '../list/list.dart';
 import '../mounted/mounted.dart';
 import '../no_generate_todo/module.dart';
 import '../todo/store.dart';
@@ -19,6 +20,9 @@ abstract class HomePages extends SimplePage with _$HomePages {
     const factory HomePages.todo(BuiltList<Todo> todos) = _Todo;
     const factory HomePages.noGenerateTodo() = _NoGenerateTodo;
     const factory HomePages.inside() = _Inside;
+    const factory HomePages.didUpdate() = _DidUpdate;
+    const factory HomePages.didUpdateModule() = _DidUpdateModule;
+    const factory HomePages.didUpdateModuleBuilder() = _DidUpdateModuleBuilder;
 }
 
 class HomeModule extends Module<HomePages> {
@@ -29,7 +33,10 @@ class HomeModule extends Module<HomePages> {
         home: (_) => AppListWidget(),
         todo: (p) => TodoModule(),
         inside: (_) => MountedWidget(),
-        noGenerateTodo: (_) => NoGenerateTodoModule()
+        noGenerateTodo: (_) => NoGenerateTodoModule(),
+        didUpdate: (_) => DidUpdateWidgetDemo(DemoType.Component),
+        didUpdateModule: (_) => DidUpdateWidgetDemo(DemoType.Module),
+        didUpdateModuleBuilder: (_) => DidUpdateWidgetDemo(DemoType.ModuleBuilder),
     );
 
     @override

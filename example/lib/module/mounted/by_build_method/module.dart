@@ -33,7 +33,7 @@ class MountedByBuildMethodModule extends Module<MountedByBuildMethodPages> with 
             const SizedBox(height: 10),
 
             Text(
-                'This module is mounted by override the build method',
+                'This module is mounted by ModuleBuilder mixin',
                 textAlign: TextAlign.center,
             )
         ]);
