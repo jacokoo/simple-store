@@ -14,6 +14,7 @@ part './module/module.dart';
 part './module/app.dart';
 part './module/generated.dart';
 
+/// Store is to hold state objects and handle action
 abstract class Store<T extends SimpleAction> {
     Store __parent;
     Store __connectedStore;
@@ -24,8 +25,11 @@ abstract class Store<T extends SimpleAction> {
         _state = _StateHolder(_tag, debug);
     }
 
+    /// Compose two stores as one.
+    /// The current store is used as a parent of child store.
+    /// Returns the composed store.
     Store connect(Store child) {
-        Store c = child;
+        var c = child;
         while (c.__connectedStore != null) {
             c = c.__connectedStore;
         }
@@ -34,8 +38,10 @@ abstract class Store<T extends SimpleAction> {
         return child;
     }
 
+    /// Whether to show debug info
     bool get debug => false;
 
+    /// Dispatch actions during handling action.
     @protected
     Future<dynamic> dispatch(StoreSetter set, SimpleAction action) {
         if (set != null) {
@@ -53,20 +59,27 @@ abstract class Store<T extends SimpleAction> {
             });
     }
 
+    /// Emit a boardcast event to child stores
     @protected
-    void emit<T extends SimpleState>(T t, {dynamic name}) {
-        _event.emit<T>(t, name: name);
+    void emit<S extends SimpleState>(S t, {dynamic name}) {
+        _event.emit<S>(t, name: name);
     }
 
+    /// Override this method to initialize the state of current store.
     @protected
     void init(StoreInitializer init);
 
+    /// Override this to handle incoming actions.
     @protected
     Future<dynamic> handle(StoreSetter set, StoreGetter get, T action);
 
+    /// This method is invoked when the store is disposing.
+    /// All listeners are removed before call this.
+    /// State will be cleard after call this.
     @protected
     void dispose(StoreGetter get) {}
 
+    /// Handle errors from action handling.
     @protected
     void onError(SimpleAction action, dynamic e, dynamic stack) {
         assert(() {
@@ -76,6 +89,7 @@ abstract class Store<T extends SimpleAction> {
         throw e;
     }
 
+    /// Whether the action is supported by current store.
     @protected
     bool support(SimpleAction action) => action is T;
 
@@ -91,8 +105,8 @@ abstract class Store<T extends SimpleAction> {
 
     Future<dynamic> _handle(StoreSetter set, SimpleAction action) async {
         if (support(action)) {
-            final sub = set._sub(this._state);
-            final getter = StoreGetter._(this._state);
+            final sub = set._sub(_state);
+            final getter = StoreGetter._(_state);
             try {
                 return await handle(sub, getter, action);
             } finally {
@@ -114,7 +128,7 @@ abstract class Store<T extends SimpleAction> {
     }
 
     void __didDispose() {
-        final getter = StoreGetter._(this._state);
+        final getter = StoreGetter._(_state);
         try {
             dispose(getter);
         } finally {
@@ -125,8 +139,8 @@ abstract class Store<T extends SimpleAction> {
     }
 
     void _dispose() {
-        this.__willDispose();
-        this.__didDispose();
+        __willDispose();
+        __didDispose();
     }
 
     void _init() {

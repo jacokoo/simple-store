@@ -52,7 +52,7 @@ class TodoStore extends Store<TodoAction> {
     }
 
     @override
-    void dispose(StoreGetter get) async {
+    void dispose(StoreGetter get) {
         dispatch(null, HomeAction.storeTodos(get<TodoState>().todos));
     }
 

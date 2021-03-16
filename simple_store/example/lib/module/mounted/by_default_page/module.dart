@@ -34,7 +34,7 @@ class _DefaultPage extends StatelessWidget {
     @override
     Widget build(BuildContext context) {
         return Column(children: [
-            Row(children: [
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 TextButton(
                     onPressed: () {
                         context.navTo(MountedByDefaultPagePages.detail());
@@ -48,7 +48,7 @@ class _DefaultPage extends StatelessWidget {
                     },
                     child: Text('show todo module')
                 ),
-            ], mainAxisAlignment: MainAxisAlignment.center),
+            ]),
 
             const SizedBox(height: 10),
 

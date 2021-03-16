@@ -38,7 +38,7 @@ class _ReferenceState<T extends SimpleState> extends _AbstractState implements _
 
     @override
     String toString() {
-        String s = 'ReferenceState';
+        var s = 'ReferenceState';
         assert(() {
             s = '$s[$_referred]';
             return true;
@@ -90,7 +90,7 @@ class _EntireReferenceState<T extends SimpleState> extends _AbstractNamedState i
 
     @override
     String toString() {
-        String s = 'EntireReferenceState';
+        var s = 'EntireReferenceState';
         assert(() {
             s = '$s[$_referred]';
             return true;
@@ -161,7 +161,7 @@ class _NamedReferenceState<T extends SimpleState> extends _AbstractNamedState im
 
     @override
     String toString() {
-        String s = 'NamedReferenceState';
+        var s = 'NamedReferenceState';
         assert(() {
             s = '$s[$_referred] with names: $_names';
             return true;
@@ -170,14 +170,18 @@ class _NamedReferenceState<T extends SimpleState> extends _AbstractNamedState im
     }
 }
 
+/// A function that transform a parent state to local.
 typedef Transformer<T extends SimpleState> = void Function(T state, TransformSetter set);
 
+/// Used in Transformer, to update the state of current store.
 class TransformSetter {
     final StoreSetter _setter;
     TransformSetter._(this._setter);
 
+    /// Whether the transformer is the intialize run.
     bool get isInit => _setter._isInit;
 
+    /// Update a state of current store.
     void call<T extends SimpleState>(T t, {dynamic name}) {
         _setter._key(_StateKey<T>(T, name), t);
     }

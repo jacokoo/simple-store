@@ -1,22 +1,10 @@
-A library for Dart developers.
-
-Created from templates made available by Stagehand under a BSD-style
-[license](https://github.com/dart-lang/stagehand/blob/master/LICENSE).
+Code generators for simple_store.
 
 ## Usage
 
-A simple usage example:
-
-```dart
-import 'package:simple_store_gen/simple_store_gen.dart';
-
-main() {
-  var awesome = new Awesome();
-}
+```yaml
+# pubspec.yaml
+dev_dependencies:
+	build_runner:
+	simple_store_gen:
 ```
-
-## Features and bugs
-
-Please file feature requests and bugs at the [issue tracker][tracker].
-
-[tracker]: http://example.com/issues/replaceme

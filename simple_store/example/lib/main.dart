@@ -1,6 +1,7 @@
-import 'package:example/module/home/home.dart';
 import 'package:flutter/material.dart';
 import 'package:simple_store/simple_store.dart';
+
+import 'module/home/home.dart';
 
 void main() {
     runApp(SimpleStoreApp(

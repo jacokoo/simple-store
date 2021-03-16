@@ -26,6 +26,7 @@ abstract class HomePages extends SimplePage with _$HomePages {
 }
 
 class HomeModule extends Module<HomePages> {
+    @override
     HomePages get defaultPage => HomePages.home();
 
     @override

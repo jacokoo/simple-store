@@ -1,5 +1,6 @@
 part of '../store.dart';
 
+/// A function used to create default state object when the state with specified name is not exists in the current store.
 typedef NamedStateInitializer<T extends SimpleState> = T Function(dynamic name);
 
 class _StateKey<T extends SimpleState> {
@@ -44,20 +45,24 @@ abstract class _AbstractState extends _State {
     final references = _Holder<_Reference>();
     final transformers = _Holder<_Transformer>();
 
+    @override
     VoidCallback addTransformer(dynamic name, _Transformer transformer) {
         assert(name == null);
         return transformers.add(transformer);
     }
 
+    @override
     VoidCallback addReference(dynamic name, _Reference reference) {
         assert(name == null);
         return references.add(reference);
     }
 
+    @override
     Set<_StateHolder> collect(dynamic name) {
         return references.flat((item) => item.collect(name));
     }
 
+    @override
     bool set(dynamic name, SimpleState state, StoreSetter set) {
         assert(name == null);
 
@@ -70,12 +75,14 @@ abstract class _AbstractState extends _State {
 
     bool doSet(dynamic name, SimpleState state);
 
+    @override
     int delete(dynamic name) {
         assert(name == null);
         notifyDeleted(name);
         return 3;
     }
 
+    @override
     void notifyDeleted(dynamic name) {
         assert(name == null);
         references.forEach((e) => e.deleted(name));
@@ -87,21 +94,25 @@ abstract class _AbstractNamedState extends _AbstractState {
     final namedTransformers = _MapHolder<_Transformer>();
     final namedReferences = _MapHolder<_Reference>();
 
+    @override
     VoidCallback addTransformer(dynamic name, _Transformer transformer) {
         assert(name != null);
         return namedTransformers.add(name, transformer);
     }
 
+    @override
     VoidCallback addReference(dynamic name, _Reference reference) {
         if (name == null) return super.addReference(name, reference);
         return namedReferences.add(name, reference);
     }
 
+    @override
     Set<_StateHolder> collect(dynamic name) {
         if (name == null) return super.collect(name);
         return namedReferences.flat(name, (item) => item.collect(name));
     }
 
+    @override
     int delete(dynamic name) {
         final result = doDelete(name);
         if (result & 2 == 2) {
@@ -113,6 +124,7 @@ abstract class _AbstractNamedState extends _AbstractState {
 
     int doDelete(dynamic name);
 
+    @override
     bool set(dynamic name, SimpleState state, StoreSetter set) {
         assert(name != null);
         final result = doSet(name, state);
@@ -122,6 +134,7 @@ abstract class _AbstractNamedState extends _AbstractState {
         return result;
     }
 
+    @override
     void notifyDeleted(dynamic name) {
         if (name != null) {
             namedTransformers.forEach(name, (e) => e.deleted());
@@ -162,7 +175,7 @@ class _ValueState extends _AbstractState {
 
     @override
     String toString() {
-        String s = 'ValueState';
+        var s = 'ValueState';
         assert(() {
             s = 'ValueState[${_value.runtimeType}]';
             return true;
@@ -172,7 +185,7 @@ class _ValueState extends _AbstractState {
 }
 
 class _NamedState extends _AbstractNamedState {
-    Map<dynamic, SimpleState> _states = {};
+    final Map<dynamic, SimpleState> _states = {};
     NamedStateInitializer _initializer;
     _NamedState(this._initializer);
     _NamedState.value(dynamic name, SimpleState value): _initializer = null {
@@ -227,7 +240,7 @@ class _NamedState extends _AbstractNamedState {
 
     @override
     String toString() {
-        String s = 'NamedState';
+        var s = 'NamedState';
         assert(() {
             final ss = _states.entries.map((e) => '(${e.key}, ${e.value.runtimeType})').join(',');
             s = '$s[$ss]';
@@ -240,8 +253,8 @@ class _NamedState extends _AbstractNamedState {
 class _StateHolder {
     bool __disposed = false;
     _StateWatcher _watcher;
-    Map<Type, _State> __state = {};
-    Map<_Transformer, VoidCallback> __trans = {};
+    final Map<Type, _State> __state = {};
+    final Map<_Transformer, VoidCallback> __trans = {};
     final String _tag;
     final bool _debug;
 
@@ -347,6 +360,7 @@ class _StateHolder {
     }
 }
 
+/// A setter used to update state of store.
 class StoreSetter {
     final StoreSetter _parent;
     final _Initializer _init;
@@ -361,6 +375,7 @@ class StoreSetter {
         return StoreSetter.__forSub(_isInit, _init, _changed, store, this);
     }
 
+    /// Update a state of store.
     void call<T extends SimpleState>(T t, {dynamic name}) {
         final key = _StateKey<T>(T, name);
         _key(key, t);
@@ -402,14 +417,17 @@ class StoreSetter {
     }
 }
 
+/// A getter used to get state from current store.
 class StoreGetter with _Initializer {
     final _StateHolder _owner;
     StoreGetter._(this._owner);
 
+    /// Get a state use specified Type and name
     T call<T extends SimpleState>({dynamic name}) {
         return _do(() => _owner._get(_StateKey<T>(T, name)));
     }
 
+    /// Determine if the state is in the current store.
     bool has<T extends SimpleState>({dynamic name}) {
         return _do(() => _owner._haveState(_StateKey<T>(T, name)));
     }

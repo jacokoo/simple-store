@@ -16,12 +16,15 @@ class TodoListPage extends StatelessWidget {
                     context.navTo(TodoPages.add());
                 })]
             ),
-            body: SafeArea(child: Container(child: Column(children: [
-                TodoHeader(),
-                Divider(height: 1),
-                Expanded(child: TodoContent()),
-                TodoFooter()
-            ]), color: Colors.grey.shade200)),
+            body: SafeArea(child: Container(
+                color: Colors.grey.shade200,
+                child: Column(children: [
+                    TodoHeader(),
+                    Divider(height: 1),
+                    Expanded(child: TodoContent()),
+                    TodoFooter()
+                ]),
+            )),
         );
     }
 }

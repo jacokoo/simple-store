@@ -25,10 +25,10 @@ class TodoHeader extends StatelessWidget {
     Widget filter(TodoState ts, String name, FilterType type, BuildContext context) {
         return Container(
             child: TextButton(
-                child: Text(name, style: TextStyle(color: ts.filter == type ? Colors.red : null)),
                 onPressed: () {
                     context.dispatch(TodoAction.filter(type));
                 },
+                child: Text(name, style: TextStyle(color: ts.filter == type ? Colors.red : null)),
             ),
         );
     }

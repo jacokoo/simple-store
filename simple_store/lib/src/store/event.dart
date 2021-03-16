@@ -1,5 +1,6 @@
 part of '../store.dart';
 
+/// A function used to listen event.
 typedef Listener<T> = void Function(T);
 
 class _EventHolder {

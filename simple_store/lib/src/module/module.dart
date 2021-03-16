@@ -17,7 +17,10 @@ abstract class Module<T extends SimplePage> extends _StatelessWidget with _Store
         return MaterialPage(child: child, key: key);
     }
 
+    /// Whether the page is supported by current module
     bool support(SimplePage page) => page is T;
+
+    /// Determine if the two pages are same.
     bool isSamePage(T t1, T t2) => t1 == t2;
 
     @override
@@ -44,8 +47,10 @@ abstract class Module<T extends SimplePage> extends _StatelessWidget with _Store
     );
 }
 
+/// Provide build method for Module.
 mixin ModuleBuilder<T extends SimplePage> on Module<T> {
     /// with this mixin, defaultPage is optional.
+    @override
     T get defaultPage => null;
 
     /// return the widget for the module when it is mounted to widget tree
@@ -53,19 +58,27 @@ mixin ModuleBuilder<T extends SimplePage> on Module<T> {
     Widget build(BuildContext context);
 }
 
+/// Provide navigation ability for Store.
 mixin StoreNavigate<T extends SimpleAction> on Store<T> {
+
+    /// Navigate to some page.
     Future<dynamic> navTo(StoreSetter set, SimplePage page) {
         return dispatch(set, _NavigateAction.navTo(page));
     }
 
+    /// pop the top most page.
     void pop(StoreSetter set, [dynamic result]) {
         dispatch(set, _NavigateAction.pop(result));
     }
 }
 
+/// The navigation state of the current module.
+/// One can reference this state to determine current page of the module.
 abstract class PageState extends SimpleState with _$PageState {
     PageState._();
     factory PageState._create(Completer _completer, List<SimplePage> _stack) = _PageState;
+
+    /// Get the current page.
     SimplePage get current => _stack.isEmpty ? null : _stack.last;
 
     static PageState _new(SimplePage initialPage) {
@@ -86,7 +99,7 @@ class _ModuleNode extends _ModuleState with _PageCollector {
 
     VoidCallback _listenerRemover;
     List<SimplePage> _shownPages = [];
-    List<dynamic> _shownWidgets = [];
+    final List<dynamic> _shownWidgets = [];
 
     _ModuleNode(_PageCollector collector, this._module, _StoreApi parent, this._mounted) {
         _moduleStore = _StoreApi(_module._createModuleStore(_mounted));
@@ -114,7 +127,7 @@ class _ModuleNode extends _ModuleState with _PageCollector {
     }
 
     void _changePages(List<SimplePage> news, bool isInit) {
-        int i = 0;
+        var i = 0;
         for (; i < news.length && i < _shownPages.length; i ++) {
             if (!_module.isSamePage(news[i], _shownPages[i])) {
                 break;
@@ -172,7 +185,7 @@ class _ModuleNode extends _ModuleState with _PageCollector {
 
     _ModuleNode _createModulePage(Module widget) {
         assert(widget.defaultPage != null, 'Module[${widget.runtimeType}] is not mounted to widget tree, so the defaultPage must not be null.');
-        final node = _ModuleNode(this, widget, this._store, false);
+        final node = _ModuleNode(this, widget, _store, false);
         node.init();
         return node;
     }
@@ -219,6 +232,7 @@ class _MountedModuleNode extends _ModuleNode {
         _PageCollector collector, Module module, _StoreApi parent
     ): useBuilder = module is ModuleBuilder, super(collector, module, parent, true);
 
+    @override
     void _changePages(List<SimplePage> news, bool isInit) {
         if (!useBuilder && news.isNotEmpty) news.removeAt(0);
         super._changePages(news, isInit);

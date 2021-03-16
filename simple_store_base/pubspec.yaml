@@ -1,7 +1,7 @@
 name: simple_store_base
-description: A starting point for Dart libraries or applications.
-# version: 1.0.0
-# homepage: https://www.example.com
+description: Define common classes for simple_store and simple_store_gen.
+version: 0.1.0
+homepage: https://github.com/jacokoo/simple-store
 
 environment:
     sdk: '>=2.8.1 <3.0.0'

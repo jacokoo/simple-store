@@ -13,8 +13,9 @@ class _Initializer {
     }
 }
 
+/// This is used to initialize the state of store.
 class StoreInitializer with _Initializer {
-    Store _owner;
+    final Store _owner;
     final StoreSetter _root = StoreSetter._(true);
     StoreSetter _setter;
 
@@ -28,6 +29,7 @@ class StoreInitializer with _Initializer {
         _root._end();
     }
 
+    /// Add a state to store.
     void state<T extends SimpleState>(T t, {dynamic name}) {
         _do(() {
             _State state = name == null ? _ValueState(t) : _NamedState.value(name, t);
@@ -35,18 +37,21 @@ class StoreInitializer with _Initializer {
         });
     }
 
+    /// Add a named state initializer to store.
     void namedState<T extends SimpleState>(NamedStateInitializer<T> initializer) {
         _do(() {
             _owner._state._add<T>(_NamedState(initializer));
         });
     }
 
+    /// Declare a event emitter.
     void event<T extends SimpleState>() {
         _do(() {
             _owner._event._add<T>();
         });
     }
 
+    /// Reference a state from parent store.
     void ref<T extends SimpleState>({dynamic name}) {
         final key = _StateKey<T>(T, name);
         final result = __visiteParent((p) {
@@ -58,6 +63,8 @@ class StoreInitializer with _Initializer {
         assert(result, '$T is not found in ${_owner._tag}');
     }
 
+    /// Transform a parent state.
+    /// This will listen to the parent state, when it changed the transformer will get called.
     void transform<T extends SimpleState>(Transformer<T> transformer, {dynamic name}) {
         final key = _StateKey<T>(T, name);
         final result = __visiteParent((p) {
@@ -70,6 +77,7 @@ class StoreInitializer with _Initializer {
         assert(result, '$T is not found in ${_owner._tag}');
     }
 
+    /// Listen event from parent store
     void listen<T extends SimpleState>({dynamic name, @required Listener<T> listener}) {
         final key = _StateKey<T>(T, name);
         final result = __visiteParent((p) {

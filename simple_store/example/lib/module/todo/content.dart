@@ -12,8 +12,8 @@ class TodoContent extends StatelessWidget {
             return ListView.separated(
                 itemBuilder: (_, idx) => item(context, ss[idx]),
                 separatorBuilder: (_, __) => Container(
-                    child: Divider(indent: 14, height: 1),
                     color: Colors.white,
+                    child: Divider(indent: 14, height: 1),
                 ),
                 itemCount: ss.length
             );

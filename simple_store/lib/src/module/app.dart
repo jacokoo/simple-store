@@ -1,8 +1,14 @@
 part of '../store.dart';
 
+/// The entrance of simple_store.
 class SimpleStoreApp extends StatefulWidget {
+    /// the first screen of the app
     final Widget home;
+
+    /// The builder is expected to return MaterialApp.router.
     final Widget Function(RouterDelegate, RouteInformationParser) builder;
+
+    /// Create the app.
     SimpleStoreApp({
         @required this.home,
         @required this.builder
@@ -74,7 +80,7 @@ mixin _PageCollector {
     void _takePriority() {
         _parent?._takePriority();
         _parent?._child = this;
-        this._child = null;
+        _child = null;
     }
 
     List<Page> _childPages() {
@@ -92,8 +98,7 @@ mixin _PageCollector {
 
 class _CollectorInheritedWidget extends InheritedWidget {
     final _PageCollector collector;
-    final Widget child;
-    _CollectorInheritedWidget(this.collector, this.child): super(child: child);
+    _CollectorInheritedWidget(this.collector, Widget child): super(child: child);
 
     @override
     bool updateShouldNotify(_CollectorInheritedWidget oldWidget) {

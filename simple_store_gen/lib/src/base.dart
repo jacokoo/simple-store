@@ -1,8 +1,8 @@
 import 'package:analyzer/dart/analysis/session.dart';
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/src/builder/build_step.dart';
-import 'package:analyzer/dart/element/element.dart';
 import 'package:source_gen/source_gen.dart';
 
 Future<AstNode> getAst(Element c, BuildStep step) async {
@@ -46,7 +46,7 @@ class TypedItem {
                 name = '${ast.beginToken.toString()}.$name';
             }
         } catch (ex) {
-            print('get ast for $e failed');
+            // print('get ast for $e failed');
         }
         return TypedItem(name, e.name);
     }
