@@ -1,9 +1,9 @@
-import 'package:example/module/list/module_builder.dart';
 import 'package:flutter/material.dart';
 import 'package:simple_store/simple_store.dart';
 
 import 'component.dart';
 import 'module.dart';
+import 'module_builder.dart';
 import 'store.dart';
 
 enum DemoType { Component, Module, ModuleBuilder }

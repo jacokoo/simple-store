@@ -131,7 +131,6 @@ class _RouterDelegate extends RouterDelegate
 
     @override
     Future<void> setNewRoutePath(configuration) async {
-        print('set new route path $configuration');
     }
 
     @override
@@ -149,6 +148,7 @@ class _RouterDelegate extends RouterDelegate
     }
 }
 
+// web route support will be in next release.
 class _RouteInfoParser extends RouteInformationParser {
     @override
     Future parseRouteInformation(RouteInformation routeInformation) async {
